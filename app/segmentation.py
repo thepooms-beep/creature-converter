@@ -136,7 +136,8 @@ def ingest_pdf(pdf_path: Path, source_slug: str) -> dict[str, Any]:
     source_dir = storage.UNEDITED_DIR / source_slug
     source_dir.mkdir(parents=True, exist_ok=True)
 
-    pages = convert_from_path(str(pdf_path), dpi=PAGE_DPI)
+    poppler_path = os.getenv("POPPLER_PATH") or None
+    pages = convert_from_path(str(pdf_path), dpi=PAGE_DPI, poppler_path=poppler_path)
 
     # Pass 1: segment each page. Entries and figures are detected separately
     # so we never invent a figure for an entry that wasn't drawn.
