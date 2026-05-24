@@ -457,7 +457,7 @@
               </div>
               <div class="field">
                 <label>Setting</label>
-                <select x-model="imgSettingKey" @change="imgBackgroundKey = settingOptions(imgSettingKey)[0]?.key">
+                <select x-model="imgSettingKey">
                   <template x-for="s in (imgCatalog.settings || [])" :key="s.key">
                     <option :value="s.key" x-text="s.label"></option>
                   </template>
@@ -618,6 +618,17 @@ function app() {
     async init() {
       this.health = await (await fetch('/api/health')).json();
       this.imgCatalog = await (await fetch('/api/image-prompts')).json();
+      // Keep the Background dropdown in sync whenever Setting changes (whether
+      // the user picked it or we set it programmatically in openEntry). Alpine's
+      // x-for inside <select> doesn't always re-render reliably when the
+      // template's source array is recomputed mid-async-flow; routing the
+      // dependency through $watch forces a deterministic update.
+      this.$watch('imgSettingKey', (newKey) => {
+        const opts = this.settingOptions(newKey);
+        if (!opts.find(o => o.key === this.imgBackgroundKey)) {
+          this.imgBackgroundKey = opts[0]?.key || '';
+        }
+      });
       await this.refreshSources();
       await this.refreshExportSummary();
     },
@@ -701,10 +712,14 @@ function app() {
         this.normalizeCreature();
       }
       // Default the concept-art selectors from the creature setting (if any),
-      // and pull any prior candidates / final image from disk.
+      // and pull any prior candidates / final image from disk. Clear the
+      // background key first so the $watch on imgSettingKey always picks the
+      // first valid option of the new setting (otherwise a key that happens
+      // to be valid in both old and new settings — e.g. neutral_watercolor —
+      // would carry over silently).
+      this.imgBackgroundKey = '';
       this.imgSettingKey = this.settingKeyFromCreature();
-      const opts = this.settingOptions(this.imgSettingKey);
-      this.imgBackgroundKey = opts[0]?.key || '';
+      await this.$nextTick();
       this.imgMode = this.activeEntry.art_image ? 'recreate' : 'describe';
       await this.refreshCandidates();
       window.scrollTo({top:0, behavior:'smooth'});

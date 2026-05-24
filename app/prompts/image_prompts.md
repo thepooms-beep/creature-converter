@@ -60,6 +60,12 @@ Setting: a towering canyon of weathered red sandstone — massive rounded pillar
 Setting: a bustling fantasy city street with sandstone walls and domed towers, distant minarets and battlements rising against the sky, ornate archways, hanging banners and woven awnings, market stalls and oil lamps in the background, hooded figures and merchants seen at distance and from behind. Late afternoon light — warm golden sun raking across the architecture from camera-right, deep cool shadows in the alleyways. Color palette: warm sandstone tan, terracotta rooftops, burnt sienna, accents of deep teal and crimson textiles, brass and copper highlights, hazy gold sky.
 ```
 
+### 5 — Neutral watercolor
+
+```text
+Setting: an abstract neutral watercolor wash backdrop with no specific scenery, props, ground line, or horizon. Soft loose brushstrokes in pale muted tones, gentle pigment bleeds and faint water-marks, subtle paper-grain texture showing through the wash, edges of the wash fading to bare paper near the frame. Diffuse even studio-style lighting with a subtle warm rim from camera-right and a soft cool shadow tone from camera-left to keep the subject's lighting consistent with the other backgrounds. Color palette: pale ivory and bone-cream, soft warm grey, dusty taupe, hints of muted ochre and pale sage, faint warm cream highlights, cool blue-grey shadow accents. Use when the subject is small, in an unusual pose, or otherwise benefits from a clean ungrounded backdrop that puts the creature itself front and centre.
+```
+
 ---
 
 # 🦇 Ravenloft
@@ -104,6 +110,12 @@ Setting: an ancient stone crypt deep underground. Vaulted low ceilings of carved
 Setting: the vast hall of a gothic castle. Soaring stone walls with pointed arched windows, ribbed vaulted ceilings disappearing into darkness, a massive iron chandelier with guttering candles hanging overhead, faded tapestries of forgotten heraldry, a sweeping stone staircase in the background, suits of tarnished armor standing sentinel, a dying fire glowing in an enormous stone fireplace. Cold pale moonlight streaming through tall stained-glass windows from camera-left; warm flickering firelight and candle glow from camera-right illuminating the subject. Heavy shadows in the corners, faint mist seeping in at floor level. Color palette: deep midnight blues from stained glass, charcoal blacks, tarnished silver and pewter, faded crimson and dull gold on tapestries, warm amber firelight, jewel-tone window accents.
 ```
 
+### 5 — Neutral watercolor
+
+```text
+Setting: an abstract neutral watercolor wash backdrop with no specific scenery, props, ground line, or horizon. Soft loose brushstrokes in pale muted tones, gentle pigment bleeds and faint water-marks, subtle paper-grain texture showing through the wash, edges of the wash fading to bare paper near the frame. Diffuse even studio-style lighting with a subtle warm rim from camera-right and a soft cool shadow tone from camera-left to keep the subject's lighting consistent with the other backgrounds. Color palette: pale ivory and bone-cream, soft warm grey, dusty taupe, hints of muted ochre and pale sage, faint warm cream highlights, cool blue-grey shadow accents. Use when the subject is small, in an unusual pose, or otherwise benefits from a clean ungrounded backdrop that puts the creature itself front and centre.
+```
+
 ---
 
 # ⚔️ Generic Fantasy
@@ -146,6 +158,12 @@ Setting: the grand throne room of a royal palace. Polished marble floors with in
 
 ```text
 Setting: a high windswept mountain pass. Towering jagged grey peaks rising on either side with snow caps and patches of ice, a narrow rocky trail winding through scattered boulders and weathered pines clinging to the slopes, a sweeping vista of distant valleys and rolling cloud below, a stone cairn marking the path, drifting snow flurries and mist. Warm golden light of late afternoon sun raking across the peaks from camera-right, cool blue-violet shadows in the rock faces on camera-left. Crisp clear high-altitude air, sense of vastness and exposure. Color palette: cool slate grey peaks with white snow caps, deep sapphire and royal blue skies, warm golden late-afternoon sunlight on the high rocks, cool blue-violet shadow tones in rock faces, earthy umber and weathered pine green.
+```
+
+### 5 — Neutral watercolor
+
+```text
+Setting: an abstract neutral watercolor wash backdrop with no specific scenery, props, ground line, or horizon. Soft loose brushstrokes in pale muted tones, gentle pigment bleeds and faint water-marks, subtle paper-grain texture showing through the wash, edges of the wash fading to bare paper near the frame. Diffuse even studio-style lighting with a subtle warm rim from camera-right and a soft cool shadow tone from camera-left to keep the subject's lighting consistent with the other backgrounds. Color palette: pale ivory and bone-cream, soft warm grey, dusty taupe, hints of muted ochre and pale sage, faint warm cream highlights, cool blue-grey shadow accents. Use when the subject is small, in an unusual pose, or otherwise benefits from a clean ungrounded backdrop that puts the creature itself front and centre.
 ```
 
 ---
