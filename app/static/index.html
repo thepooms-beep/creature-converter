@@ -15,30 +15,59 @@
     --radius:6px; --radius2:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:18px;line-height:1.6}
-  .wrap{max-width:1200px;margin:0 auto;padding:32px 24px 60px}
+  body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:17px;line-height:1.55}
+  .wrap{max-width:1280px;margin:0 auto;padding:32px 24px 60px}
   h1{font-family:'Cinzel',serif;font-size:24px;color:var(--gold2);letter-spacing:0.06em;margin-bottom:4px}
+  h2{font-family:'Cinzel',serif;font-size:20px;color:var(--gold2);letter-spacing:0.04em;margin-bottom:2px}
   .subtitle{color:var(--text3);font-style:italic;margin-bottom:28px;font-size:14px}
   .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:20px;margin-bottom:18px}
   .section-label{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.12em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
-  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.07em;cursor:pointer;transition:all 0.18s}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.07em;cursor:pointer;transition:all 0.18s;text-decoration:none}
   .btn:hover{background:var(--bg4);color:var(--text);border-color:var(--gold)}
+  .btn-primary{background:var(--bg4);color:var(--gold2);border-color:var(--gold)}
+  .btn-primary:hover{background:var(--gold);color:var(--bg)}
+  .btn-tiny{padding:4px 10px;font-size:11px}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
   input[type=file]{color:var(--text2);font-family:inherit;font-size:15px}
+  input[type=text],input[type=number],select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-family:inherit;font-size:15px;width:100%}
+  input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  textarea{resize:vertical;min-height:60px;line-height:1.5}
+  label{display:block;font-size:12px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px}
+  .field{margin-bottom:12px}
+  .row{display:grid;gap:12px}
+  .row.cols-2{grid-template-columns:1fr 1fr}
+  .row.cols-3{grid-template-columns:repeat(3,1fr)}
+  .row.cols-4{grid-template-columns:repeat(4,1fr)}
+  .row.cols-6{grid-template-columns:repeat(6,1fr)}
   .status{font-size:14px;color:var(--text3);margin-top:10px;min-height:18px;font-style:italic}
   .badge{display:inline-block;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--text2);font-size:12px;letter-spacing:0.04em}
   .badge.ok{color:#7ad67a}
   .badge.warn{color:#d6a47a}
+  .badge.info{color:#7ab8d6}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
   .empty{color:var(--text3);font-style:italic;font-size:15px}
   .source-pill{padding:8px 14px;cursor:pointer;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg3);color:var(--text2);font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em}
   .source-pill:hover{border-color:var(--gold);color:var(--text)}
   .source-pill.active{border-color:var(--gold);color:var(--gold2);background:var(--bg4)}
-  .entry-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+  .entry-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:border-color 0.15s}
+  .entry-card:hover{border-color:var(--gold)}
   .entry-card .thumb{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--bg);border-bottom:1px solid var(--border)}
   .entry-card .thumb-empty{width:100%;aspect-ratio:1/1;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--text3);font-style:italic;font-size:13px;border-bottom:1px solid var(--border)}
   .entry-card .meta{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
   .entry-card .name{font-family:'Cinzel',serif;font-size:14px;color:var(--text);letter-spacing:0.04em}
   .entry-card .sub{font-size:12px;color:var(--text3)}
+  .row-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;display:grid;gap:8px}
+  .row-card .row-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .pill-list{display:flex;flex-wrap:wrap;gap:6px}
+  .image-pane{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:start}
+  .art-frame{border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);padding:6px}
+  .art-frame img{width:100%;display:block;border-radius:3px}
+  .source-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .source-thumbs a{display:block;border:1px solid var(--border);border-radius:4px;overflow:hidden;width:72px;height:96px}
+  .source-thumbs img{width:100%;height:100%;object-fit:cover;display:block;background:var(--bg)}
+  hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+  .err{color:#d68080;font-size:14px}
+  .ok-msg{color:#7ad67a;font-size:14px}
 </style>
 </head>
 <body x-data="app()" x-init="init()">
@@ -58,21 +87,21 @@
     </p>
   </div>
 
-  <div class="card">
+  <div class="card" x-show="!activeEntry">
     <div class="section-label">1. Current monsters.js</div>
     <p style="margin-bottom:10px">Upload your current DM CM <code>monsters.js</code> so existing records are preserved on export.</p>
     <input type="file" accept=".js" @change="uploadMonstersJs($event)">
     <div class="status" x-text="monstersJsStatus"></div>
   </div>
 
-  <div class="card">
+  <div class="card" x-show="!activeEntry">
     <div class="section-label">2. Compendium PDF</div>
     <p style="margin-bottom:10px">Upload a scanned monster compendium. Segmentation runs after upload.</p>
     <input type="file" accept=".pdf" @change="uploadPdf($event)">
     <div class="status" x-text="ingestStatus"></div>
   </div>
 
-  <div class="card">
+  <div class="card" x-show="!activeEntry">
     <div class="section-label">Sources</div>
     <template x-if="sources.length === 0">
       <p class="empty">No sources uploaded yet.</p>
@@ -84,7 +113,7 @@
     </div>
   </div>
 
-  <template x-if="activeSource">
+  <template x-if="activeSource && !activeEntry">
     <div class="card">
       <div class="section-label">
         Entries — <span x-text="activeSource"></span>
@@ -95,7 +124,7 @@
       </template>
       <div class="grid">
         <template x-for="e in (manifest.entries || [])" :key="e.slug">
-          <div class="entry-card">
+          <div class="entry-card" @click="openEntry(e.slug)">
             <template x-if="e.art_image">
               <img class="thumb" :src="`/unedited/${activeSource}/${e.art_image}`" :alt="e.name">
             </template>
@@ -107,12 +136,279 @@
               <div class="sub">
                 pp. <span x-text="(e.pages || []).join(', ')"></span>
                 &nbsp;·&nbsp;
-                <span class="badge" :class="e.status === 'unedited' ? 'warn' : 'ok'" x-text="e.status"></span>
+                <span class="badge" :class="statusClass(e.status)" x-text="e.status"></span>
               </div>
             </div>
           </div>
         </template>
       </div>
+    </div>
+  </template>
+
+  <!-- ====================== DETAIL VIEW ====================== -->
+  <template x-if="activeEntry">
+    <div>
+      <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center">
+        <button class="btn" @click="closeEntry()">← Back to entries</button>
+        <h2 x-text="activeEntry.name"></h2>
+        <span class="badge" :class="statusClass(activeEntry.status)" x-text="activeEntry.status"></span>
+      </div>
+
+      <!-- Image / source page panel -->
+      <div class="card">
+        <div class="section-label">Reference art &amp; source pages</div>
+        <div class="image-pane">
+          <div>
+            <div class="art-frame">
+              <template x-if="activeEntry.art_image">
+                <img :src="`/unedited/${activeSource}/${activeEntry.art_image}?t=${artCacheBust}`" :alt="activeEntry.name">
+              </template>
+              <template x-if="!activeEntry.art_image">
+                <div style="aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-style:italic">no art crop</div>
+              </template>
+            </div>
+            <div class="btn-row">
+              <label class="btn" style="cursor:pointer">
+                Upload sketch
+                <input type="file" accept="image/*" @change="uploadSketch($event)" style="display:none">
+              </label>
+            </div>
+            <div class="status" x-text="sketchStatus"></div>
+          </div>
+          <div>
+            <p style="color:var(--text3);font-size:14px;margin-bottom:6px">
+              Source pages (<span x-text="(activeEntry.pages || []).length"></span>):
+            </p>
+            <div class="source-thumbs">
+              <template x-for="page in (activeEntry.pages || [])" :key="page">
+                <a :href="`/unedited/${activeSource}/${activeEntry.slug}-source-p${page}.png`" target="_blank">
+                  <img :src="`/unedited/${activeSource}/${activeEntry.slug}-source-p${page}.png`" :alt="`p.${page}`">
+                </a>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Convert / re-run controls -->
+      <div class="card">
+        <div class="section-label">Conversion</div>
+        <template x-if="!creature">
+          <div>
+            <p style="margin-bottom:10px">No 5.5e stat block yet. Run the AD&amp;D → D&amp;D 2024 conversion (Opus 4.7).</p>
+            <button class="btn btn-primary" @click="convert()" :disabled="converting" x-text="converting ? 'Converting…' : 'Convert'"></button>
+            <div class="status err" x-text="convertError"></div>
+          </div>
+        </template>
+        <template x-if="creature">
+          <div>
+            <div class="field">
+              <label>Revision note (optional)</label>
+              <textarea x-model="rerunNotes" placeholder="e.g. Drop the Multiattack — single bite only. Set CR to 4."></textarea>
+            </div>
+            <div class="btn-row">
+              <button class="btn" @click="convert()" :disabled="converting" x-text="converting ? 'Re-running…' : 'Re-run conversion'"></button>
+              <button class="btn btn-primary" @click="save()" :disabled="saving" x-text="saving ? 'Saving…' : 'Save edits'"></button>
+              <span class="ok-msg" x-show="savedAt" x-text="savedAt"></span>
+            </div>
+            <div class="status err" x-text="convertError"></div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Editable form -->
+      <template x-if="creature">
+        <div>
+          <div class="card">
+            <div class="section-label">Identity</div>
+            <div class="row cols-2">
+              <div class="field"><label>Name</label><input type="text" x-model="creature.name"></div>
+              <div class="field"><label>Type</label><input type="text" x-model="creature.type" placeholder="Beast, Humanoid, Monstrosity…"></div>
+            </div>
+            <div class="row cols-4">
+              <div class="field">
+                <label>Size</label>
+                <select x-model="creature.size">
+                  <template x-for="s in ['Tiny','Small','Medium','Large','Huge','Gargantuan']"><option x-text="s" :value="s"></option></template>
+                </select>
+              </div>
+              <div class="field"><label>Alignment</label><input type="text" x-model="creature.alignment"></div>
+              <div class="field"><label>CR</label><input type="number" step="any" x-model.number="creature.cr"></div>
+              <div class="field"><label>XP</label><input type="number" x-model.number="creature.xp"></div>
+            </div>
+            <div class="row cols-2">
+              <div class="field">
+                <label>Tags (comma-sep)</label>
+                <input type="text" :value="(creature.tags||[]).join(', ')" @change="creature.tags = csvToList($event.target.value)">
+              </div>
+              <div class="field"><label>PB</label><input type="number" x-model.number="creature.pb"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-label">Flavor</div>
+            <div class="field">
+              <label>Read-aloud (≤20 words, italic one-liner)</label>
+              <textarea x-model="creature.read_aloud"></textarea>
+            </div>
+            <label>Salient features</label>
+            <template x-for="(sf, idx) in (creature.salient_features || [])" :key="idx">
+              <div class="row-card">
+                <div class="row-head">
+                  <input type="text" x-model="sf.title" placeholder="Title">
+                  <button class="btn btn-tiny" @click="creature.salient_features.splice(idx,1)">Remove</button>
+                </div>
+                <textarea x-model="sf.text" placeholder="1-2 sentences of flavor"></textarea>
+              </div>
+            </template>
+            <button class="btn btn-tiny" @click="(creature.salient_features ||= []).push({title:'',text:''})">+ Add salient feature</button>
+          </div>
+
+          <div class="card">
+            <div class="section-label">Defense</div>
+            <div class="row cols-4">
+              <div class="field"><label>AC</label><input type="number" x-model.number="creature.ac.value"></div>
+              <div class="field"><label>AC notes</label><input type="text" x-model="creature.ac.notes"></div>
+              <div class="field"><label>HP average</label><input type="number" x-model.number="creature.hp.average"></div>
+              <div class="field"><label>HP formula</label><input type="text" x-model="creature.hp.formula"></div>
+            </div>
+            <div class="row cols-2">
+              <div class="field"><label>Initiative</label><input type="text" x-model="creature.initiative" placeholder="+0"></div>
+              <div class="field">
+                <label>Save proficiencies</label>
+                <div class="pill-list">
+                  <template x-for="a in ['STR','DEX','CON','INT','WIS','CHA']" :key="a">
+                    <label style="display:inline-flex;align-items:center;gap:5px;text-transform:none;color:var(--text2);font-size:13px;letter-spacing:0">
+                      <input type="checkbox" :value="a" :checked="(creature.save_proficiencies||[]).includes(a)" @change="toggleSave(a)">
+                      <span x-text="a"></span>
+                    </label>
+                  </template>
+                </div>
+              </div>
+            </div>
+            <label>Speeds</label>
+            <template x-for="(sp, idx) in (creature.speeds || [])" :key="idx">
+              <div class="row-card">
+                <div class="row-head">
+                  <select x-model="sp.type" style="max-width:140px">
+                    <template x-for="t in ['walk','fly','swim','climb','burrow']"><option x-text="t" :value="t"></option></template>
+                  </select>
+                  <input type="number" x-model.number="sp.value" style="max-width:100px">
+                  <input type="text" x-model="sp.notes" placeholder="optional notes">
+                  <button class="btn btn-tiny" @click="creature.speeds.splice(idx,1)">×</button>
+                </div>
+              </div>
+            </template>
+            <button class="btn btn-tiny" @click="(creature.speeds ||= []).push({type:'walk',value:30})">+ Speed</button>
+
+            <hr>
+            <div class="row cols-3">
+              <div class="field">
+                <label>Damage resistances</label>
+                <input type="text" :value="(creature.damage_resistances||[]).join('; ')" @change="creature.damage_resistances = semiToList($event.target.value)">
+              </div>
+              <div class="field">
+                <label>Damage immunities</label>
+                <input type="text" :value="(creature.damage_immunities||[]).join('; ')" @change="creature.damage_immunities = semiToList($event.target.value)">
+              </div>
+              <div class="field">
+                <label>Condition immunities</label>
+                <input type="text" :value="(creature.condition_immunities||[]).join('; ')" @change="creature.condition_immunities = semiToList($event.target.value)">
+              </div>
+            </div>
+            <div class="row cols-2">
+              <div class="field">
+                <label>Senses (comma-sep, e.g. "Darkvision 60 ft., Passive Perception 14")</label>
+                <input type="text" :value="(creature.senses||[]).join(', ')" @change="creature.senses = csvToList($event.target.value)">
+              </div>
+              <div class="field">
+                <label>Languages (comma-sep)</label>
+                <input type="text" :value="(creature.languages||[]).join(', ')" @change="creature.languages = csvToList($event.target.value)">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-label">Abilities</div>
+            <div class="row cols-6">
+              <template x-for="ab in ['str','dex','con','int','wis','cha']" :key="ab">
+                <div class="field">
+                  <label x-text="ab.toUpperCase()"></label>
+                  <input type="number" :value="creature.abilities[ab]" @input="creature.abilities[ab] = parseInt($event.target.value)||0">
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-label">Skills</div>
+            <template x-for="(val, name, idx) in (creature.skills || {})" :key="name">
+              <div class="row-card" style="grid-template-columns:1fr 120px auto">
+                <div class="row-head">
+                  <input type="text" :value="name" @change="renameSkill(name, $event.target.value)" placeholder="Skill name">
+                  <input type="number" :value="val" @input="creature.skills[name] = parseInt($event.target.value)||0" style="max-width:80px">
+                  <button class="btn btn-tiny" @click="delete creature.skills[name]">×</button>
+                </div>
+              </div>
+            </template>
+            <button class="btn btn-tiny" @click="addSkill()">+ Skill</button>
+          </div>
+
+          <template x-for="block in ['traits','actions','bonus_actions','reactions','legendary_actions']" :key="block">
+            <div class="card">
+              <div class="section-label" x-text="block.replace('_',' ')"></div>
+              <template x-for="(item, idx) in (creature[block] || [])" :key="idx">
+                <div class="row-card">
+                  <div class="row-head">
+                    <input type="text" x-model="item.name" placeholder="Name (e.g. Multiattack, Bite, Shapechanger)">
+                    <button class="btn btn-tiny" @click="creature[block].splice(idx,1)">Remove</button>
+                  </div>
+                  <textarea x-model="item.text" placeholder="Mechanics text"></textarea>
+                </div>
+              </template>
+              <button class="btn btn-tiny" @click="(creature[block] ||= []).push({name:'',text:''})" x-text="`+ Add ${block.replace('_',' ').replace(/s$/,'')}`"></button>
+            </div>
+          </template>
+
+          <div class="card">
+            <div class="section-label">Habitat &amp; setting</div>
+            <div class="field">
+              <label>Habitat (multi-select)</label>
+              <div class="pill-list">
+                <template x-for="h in ['Any','Arctic','Coastal','Desert','Forest','Grassland','Hill','Mountain','Planar','Swamp','Underdark','Underwater','Urban']" :key="h">
+                  <label style="display:inline-flex;align-items:center;gap:5px;text-transform:none;color:var(--text2);font-size:13px;letter-spacing:0">
+                    <input type="checkbox" :value="h" :checked="(creature.habitat||[]).includes(h)" @change="toggleHabitat(h)">
+                    <span x-text="h"></span>
+                  </label>
+                </template>
+              </div>
+            </div>
+            <div class="row cols-2">
+              <div class="field">
+                <label>Setting</label>
+                <input type="text" x-model="creature.setting" placeholder="Athas, Ravenloft, Forgotten Realms, generic…">
+              </div>
+              <div class="field">
+                <label>Source title</label>
+                <input type="text" :value="creature.source?.title || ''" @input="(creature.source ||= {}).title = $event.target.value">
+              </div>
+            </div>
+            <div class="field">
+              <label>Source URL</label>
+              <input type="text" :value="creature.source?.url || ''" @input="(creature.source ||= {}).url = $event.target.value">
+            </div>
+            <div class="field">
+              <label>Conversion notes (internal)</label>
+              <textarea x-model="creature.conversion_notes"></textarea>
+            </div>
+          </div>
+
+          <div style="margin-top:18px">
+            <button class="btn btn-primary" @click="save()" :disabled="saving" x-text="saving ? 'Saving…' : 'Save edits'"></button>
+            <span class="ok-msg" x-show="savedAt" x-text="savedAt" style="margin-left:12px"></span>
+          </div>
+        </div>
+      </template>
     </div>
   </template>
 </div>
@@ -124,18 +420,153 @@ function app() {
     sources: [],
     activeSource: null,
     manifest: {entries: []},
+    activeEntry: null,        // manifest entry object
+    creature: null,           // nested JSON, or null if not converted
+    converting: false,
+    convertError: '',
+    saving: false,
+    savedAt: '',
+    rerunNotes: '',
     monstersJsStatus: '',
     ingestStatus: '',
+    sketchStatus: '',
+    artCacheBust: Date.now(),
+
     async init() {
       this.health = await (await fetch('/api/health')).json();
       await this.refreshSources();
     },
+    statusClass(s) {
+      if (s === 'converted') return 'info';
+      if (s === 'text-approved' || s === 'image-approved') return 'ok';
+      return 'warn';
+    },
     async refreshSources() {
       this.sources = (await (await fetch('/api/sources')).json()).sources;
     },
+    async refreshManifest() {
+      if (!this.activeSource) return;
+      this.manifest = await (await fetch(`/api/manifest/${this.activeSource}`)).json();
+      if (this.activeEntry) {
+        const found = (this.manifest.entries || []).find(e => e.slug === this.activeEntry.slug);
+        if (found) this.activeEntry = found;
+      }
+    },
     async selectSource(slug) {
       this.activeSource = slug;
-      this.manifest = await (await fetch(`/api/manifest/${slug}`)).json();
+      this.activeEntry = null;
+      this.creature = null;
+      await this.refreshManifest();
+    },
+    async openEntry(slug) {
+      const entry = (this.manifest.entries || []).find(e => e.slug === slug);
+      if (!entry) return;
+      this.activeEntry = entry;
+      this.creature = null;
+      this.convertError = '';
+      this.rerunNotes = '';
+      this.savedAt = '';
+      this.sketchStatus = '';
+      this.artCacheBust = Date.now();
+      // Try to load existing converted JSON; 404 means not yet converted.
+      const r = await fetch(`/api/creature/${this.activeSource}/${slug}`);
+      if (r.ok) {
+        this.creature = await r.json();
+        this.normalizeCreature();
+      }
+      window.scrollTo({top:0, behavior:'smooth'});
+    },
+    closeEntry() {
+      this.activeEntry = null;
+      this.creature = null;
+    },
+    normalizeCreature() {
+      // Ensure optional fields exist so the form binds cleanly.
+      const c = this.creature;
+      c.ac ||= {value: 10, notes: null};
+      c.hp ||= {average: 0, formula: ''};
+      c.abilities ||= {str:10,dex:10,con:10,int:10,wis:10,cha:10};
+      for (const ab of ['str','dex','con','int','wis','cha']) c.abilities[ab] ??= 10;
+      c.skills ||= {};
+      c.tags ||= [];
+      c.save_proficiencies ||= [];
+      c.speeds ||= [];
+      c.senses ||= [];
+      c.languages ||= [];
+      c.damage_resistances ||= [];
+      c.damage_immunities ||= [];
+      c.condition_immunities ||= [];
+      c.salient_features ||= [];
+      c.traits ||= [];
+      c.actions ||= [];
+      c.bonus_actions ||= [];
+      c.reactions ||= [];
+      c.legendary_actions ||= [];
+      c.habitat ||= [];
+      c.source ||= {title:'',url:''};
+    },
+    async convert() {
+      if (!this.activeEntry) return;
+      this.converting = true;
+      this.convertError = '';
+      this.savedAt = '';
+      try {
+        const body = {};
+        if (this.rerunNotes.trim()) body.notes = this.rerunNotes.trim();
+        if (this.creature?.setting) body.setting_hint = this.creature.setting;
+        const r = await fetch(
+          `/api/convert/${this.activeSource}/${this.activeEntry.slug}`,
+          {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}
+        );
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({detail: r.statusText}));
+          throw new Error(err.detail || r.statusText);
+        }
+        this.creature = await r.json();
+        this.normalizeCreature();
+        this.rerunNotes = '';
+        await this.refreshManifest();
+      } catch (e) {
+        this.convertError = `Conversion failed: ${e.message}`;
+      } finally {
+        this.converting = false;
+      }
+    },
+    async save() {
+      if (!this.creature) return;
+      this.saving = true;
+      this.savedAt = '';
+      try {
+        const r = await fetch(
+          `/api/creature/${this.activeSource}/${this.activeEntry.slug}`,
+          {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(this.creature)}
+        );
+        if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+        this.savedAt = `Saved ${new Date().toLocaleTimeString()}`;
+      } catch (e) {
+        this.convertError = `Save failed: ${e.message}`;
+      } finally {
+        this.saving = false;
+      }
+    },
+    async uploadSketch(ev) {
+      const file = ev.target.files[0];
+      if (!file || !this.activeEntry) return;
+      this.sketchStatus = 'Uploading…';
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch(
+        `/api/upload-art/${this.activeSource}/${this.activeEntry.slug}`,
+        {method:'POST', body: fd}
+      );
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({detail: r.statusText}));
+        this.sketchStatus = `Error: ${err.detail || r.statusText}`;
+        return;
+      }
+      this.sketchStatus = 'Sketch replaced. (Image cache refreshed.)';
+      this.artCacheBust = Date.now();
+      await this.refreshManifest();
     },
     async uploadMonstersJs(ev) {
       const file = ev.target.files[0];
@@ -163,6 +594,30 @@ function app() {
       this.ingestStatus = `Segmented ${data.source_slug}: ${data.entry_count} entries across ${data.page_count} pages.`;
       await this.refreshSources();
       await this.selectSource(data.source_slug);
+    },
+    csvToList(s) { return s.split(',').map(x => x.trim()).filter(Boolean); },
+    semiToList(s) { return s.split(';').map(x => x.trim()).filter(Boolean); },
+    toggleSave(a) {
+      const list = (this.creature.save_proficiencies ||= []);
+      const i = list.indexOf(a);
+      if (i === -1) list.push(a); else list.splice(i,1);
+    },
+    toggleHabitat(h) {
+      const list = (this.creature.habitat ||= []);
+      const i = list.indexOf(h);
+      if (i === -1) list.push(h); else list.splice(i,1);
+    },
+    addSkill() {
+      const name = prompt('Skill name (e.g. Perception, Stealth):');
+      if (!name) return;
+      (this.creature.skills ||= {})[name] = 0;
+    },
+    renameSkill(oldName, newName) {
+      newName = newName.trim();
+      if (!newName || newName === oldName) return;
+      const val = this.creature.skills[oldName];
+      delete this.creature.skills[oldName];
+      this.creature.skills[newName] = val;
     },
   }
 }

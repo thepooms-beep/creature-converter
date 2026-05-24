@@ -45,3 +45,33 @@ def list_sources() -> list[str]:
     if not UNEDITED_DIR.exists():
         return []
     return sorted(p.name for p in UNEDITED_DIR.iterdir() if p.is_dir())
+
+
+def creature_json_path(source_slug: str, creature_slug: str) -> Path:
+    return UNEDITED_DIR / source_slug / f"{creature_slug}.json"
+
+
+def creature_art_path(source_slug: str, creature_slug: str) -> Path:
+    return UNEDITED_DIR / source_slug / f"{creature_slug}-art.png"
+
+
+def read_creature(source_slug: str, creature_slug: str) -> dict[str, Any] | None:
+    p = creature_json_path(source_slug, creature_slug)
+    if not p.exists():
+        return None
+    return json.loads(p.read_text())
+
+
+def write_creature(source_slug: str, creature_slug: str, data: dict[str, Any]) -> None:
+    p = creature_json_path(source_slug, creature_slug)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, indent=2))
+
+
+def source_image_paths(source_slug: str, creature_slug: str) -> list[Path]:
+    """All <slug>-source-p*.png files for a creature, sorted by page number."""
+    src_dir = UNEDITED_DIR / source_slug
+    if not src_dir.exists():
+        return []
+    files = sorted(src_dir.glob(f"{creature_slug}-source-p*.png"))
+    return files
