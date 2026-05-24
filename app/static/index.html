@@ -407,6 +407,92 @@
             <button class="btn btn-primary" @click="save()" :disabled="saving" x-text="saving ? 'Saving…' : 'Save edits'"></button>
             <span class="ok-msg" x-show="savedAt" x-text="savedAt" style="margin-left:12px"></span>
           </div>
+
+          <!-- ====================== CONCEPT ART ====================== -->
+          <div class="card" style="margin-top:18px">
+            <div class="section-label">Concept art (gpt-image-2)</div>
+            <p style="color:var(--text3);font-size:14px;margin-bottom:10px">
+              Generate two candidate illustrations. ~$0.08 per click at quality=auto. Pick one, request more, or upload your own.
+            </p>
+            <div class="row cols-3">
+              <div class="field">
+                <label>Mode</label>
+                <select x-model="imgMode">
+                  <option value="recreate">Recreate (use reference art)</option>
+                  <option value="describe">Describe (no sketch)</option>
+                  <option value="upload">Upload your own</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Setting</label>
+                <select x-model="imgSettingKey" @change="imgBackgroundKey = settingOptions(imgSettingKey)[0]?.key">
+                  <template x-for="s in (imgCatalog.settings || [])" :key="s.key">
+                    <option :value="s.key" x-text="s.label"></option>
+                  </template>
+                </select>
+              </div>
+              <div class="field">
+                <label>Background</label>
+                <select x-model="imgBackgroundKey">
+                  <template x-for="b in settingOptions(imgSettingKey)" :key="b.key">
+                    <option :value="b.key" x-text="b.label"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+            <template x-if="imgMode !== 'upload'">
+              <div class="field">
+                <label>Prompt injection (optional — appended to the gpt-image-2 prompt)</label>
+                <textarea x-model="imgInjection" placeholder="e.g. emphasize the curved talons; muted moonlight"></textarea>
+              </div>
+            </template>
+            <div class="btn-row" x-show="imgMode !== 'upload'">
+              <button class="btn btn-primary" @click="generateImages()" :disabled="imgBusy"
+                      x-text="imgBusy ? 'Generating…' : (imgCandidates.length ? '+1 candidate' : 'Generate 2 candidates')"></button>
+              <button class="btn" @click="clearCandidates()" :disabled="imgBusy" x-show="imgCandidates.length">Discard candidates</button>
+            </div>
+            <template x-if="imgMode === 'upload'">
+              <div>
+                <p style="color:var(--text3);font-size:13px;margin-bottom:8px">Optimal: square, 1024×1024. App resizes any input.</p>
+                <label class="btn btn-primary" style="cursor:pointer">
+                  Upload concept image
+                  <input type="file" accept="image/*" @change="uploadFinalImage($event)" style="display:none">
+                </label>
+              </div>
+            </template>
+            <div class="status err" x-text="imgError"></div>
+            <div class="status" x-text="imgStatus"></div>
+
+            <template x-if="imgCandidates.length">
+              <div>
+                <hr>
+                <p style="font-size:13px;color:var(--text3);margin-bottom:8px">
+                  <span x-text="imgCandidates.length"></span> candidate<span x-show="imgCandidates.length !== 1">s</span>. Click a thumbnail to pick.
+                </p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+                  <template x-for="c in imgCandidates" :key="c">
+                    <div class="art-frame" style="cursor:pointer;position:relative" @click="pickCandidate(c)">
+                      <img :src="`/unedited/${activeSource}/${c}?t=${imgCacheBust}`" :alt="c">
+                      <div style="position:absolute;bottom:8px;left:8px;right:8px;background:rgba(0,0,0,0.7);padding:6px 10px;border-radius:3px;text-align:center;font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em;color:var(--gold2)">
+                        Pick this
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <template x-if="imgFinal">
+              <div>
+                <hr>
+                <div class="section-label">Selected concept art</div>
+                <div class="art-frame" style="max-width:400px">
+                  <img :src="`/unedited/${activeSource}/${imgFinal}?t=${imgCacheBust}`">
+                </div>
+                <p class="status ok-msg">Marked image-approved. This file will be exported as <code><span x-text="activeEntry.slug"></span>.webp</code>.</p>
+              </div>
+            </template>
+          </div>
         </div>
       </template>
     </div>
@@ -431,10 +517,33 @@ function app() {
     ingestStatus: '',
     sketchStatus: '',
     artCacheBust: Date.now(),
+    // Concept art (slice 3)
+    imgCatalog: {settings: []},
+    imgMode: 'recreate',
+    imgSettingKey: 'generic_fantasy',
+    imgBackgroundKey: '',
+    imgInjection: '',
+    imgCandidates: [],
+    imgFinal: null,
+    imgBusy: false,
+    imgError: '',
+    imgStatus: '',
+    imgCacheBust: Date.now(),
 
     async init() {
       this.health = await (await fetch('/api/health')).json();
+      this.imgCatalog = await (await fetch('/api/image-prompts')).json();
       await this.refreshSources();
+    },
+    settingOptions(key) {
+      const s = (this.imgCatalog.settings || []).find(x => x.key === key);
+      return s ? s.backgrounds : [];
+    },
+    settingKeyFromCreature() {
+      const s = (this.creature?.setting || '').toLowerCase();
+      if (s.includes('athas') || s.includes('dark sun')) return 'dark_sun';
+      if (s.includes('ravenloft')) return 'ravenloft';
+      return 'generic_fantasy';
     },
     statusClass(s) {
       if (s === 'converted') return 'info';
@@ -468,13 +577,111 @@ function app() {
       this.savedAt = '';
       this.sketchStatus = '';
       this.artCacheBust = Date.now();
+      this.imgError = '';
+      this.imgStatus = '';
+      this.imgInjection = '';
       // Try to load existing converted JSON; 404 means not yet converted.
       const r = await fetch(`/api/creature/${this.activeSource}/${slug}`);
       if (r.ok) {
         this.creature = await r.json();
         this.normalizeCreature();
       }
+      // Default the concept-art selectors from the creature setting (if any),
+      // and pull any prior candidates / final image from disk.
+      this.imgSettingKey = this.settingKeyFromCreature();
+      const opts = this.settingOptions(this.imgSettingKey);
+      this.imgBackgroundKey = opts[0]?.key || '';
+      this.imgMode = this.activeEntry.art_image ? 'recreate' : 'describe';
+      await this.refreshCandidates();
       window.scrollTo({top:0, behavior:'smooth'});
+    },
+    async refreshCandidates() {
+      if (!this.activeEntry) return;
+      const r = await fetch(`/api/image/${this.activeSource}/${this.activeEntry.slug}/candidates`);
+      if (!r.ok) { this.imgCandidates = []; this.imgFinal = null; return; }
+      const d = await r.json();
+      this.imgCandidates = d.candidates || [];
+      this.imgFinal = d.final || null;
+      this.imgCacheBust = Date.now();
+    },
+    async generateImages() {
+      if (!this.activeEntry) return;
+      this.imgBusy = true;
+      this.imgError = '';
+      this.imgStatus = 'Calling gpt-image-2 — usually 15–25 seconds…';
+      try {
+        const body = {
+          mode: this.imgMode,
+          setting_key: this.imgSettingKey,
+          background_key: this.imgBackgroundKey,
+          injection: this.imgInjection,
+        };
+        const r = await fetch(
+          `/api/image/${this.activeSource}/${this.activeEntry.slug}`,
+          {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}
+        );
+        if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+        await this.refreshCandidates();
+        this.imgStatus = `Generated. ${this.imgCandidates.length} candidate${this.imgCandidates.length === 1 ? '' : 's'} on disk.`;
+      } catch (e) {
+        this.imgError = `Image generation failed: ${e.message}`;
+        this.imgStatus = '';
+      } finally {
+        this.imgBusy = false;
+      }
+    },
+    async pickCandidate(filename) {
+      if (!this.activeEntry) return;
+      this.imgBusy = true;
+      this.imgError = '';
+      try {
+        const r = await fetch(
+          `/api/image/${this.activeSource}/${this.activeEntry.slug}/pick`,
+          {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({candidate: filename})}
+        );
+        if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+        this.imgStatus = 'Concept art approved.';
+        await this.refreshCandidates();
+        await this.refreshManifest();
+      } catch (e) {
+        this.imgError = `Pick failed: ${e.message}`;
+      } finally {
+        this.imgBusy = false;
+      }
+    },
+    async clearCandidates() {
+      if (!this.activeEntry) return;
+      const r = await fetch(
+        `/api/image/${this.activeSource}/${this.activeEntry.slug}/clear`,
+        {method:'POST'}
+      );
+      if (r.ok) {
+        this.imgCandidates = [];
+        this.imgStatus = 'Candidates discarded.';
+      }
+    },
+    async uploadFinalImage(ev) {
+      const file = ev.target.files[0];
+      if (!file || !this.activeEntry) return;
+      this.imgBusy = true;
+      this.imgError = '';
+      this.imgStatus = 'Uploading…';
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const r = await fetch(
+          `/api/image/${this.activeSource}/${this.activeEntry.slug}/upload`,
+          {method:'POST', body: fd}
+        );
+        if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+        this.imgStatus = 'Uploaded and approved.';
+        await this.refreshCandidates();
+        await this.refreshManifest();
+      } catch (e) {
+        this.imgError = `Upload failed: ${e.message}`;
+      } finally {
+        this.imgBusy = false;
+      }
     },
     closeEntry() {
       this.activeEntry = null;

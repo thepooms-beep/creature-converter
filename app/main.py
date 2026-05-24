@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
-from . import conversion, segmentation, storage
+from . import conversion, image_gen, segmentation, storage
 
 load_dotenv()
 
@@ -174,6 +174,138 @@ async def upload_art(
             e["art_uploaded"] = True
     storage.write_manifest(source_slug, manifest)
     return {"ok": True, "art_image": target.name}
+
+
+@app.get("/api/image-prompts")
+def image_prompts_catalog() -> dict:
+    """Settings + backgrounds the UI shows in the concept-art dropdowns."""
+    return {"settings": image_gen.list_settings()}
+
+
+def _set_entry_status(source_slug: str, creature_slug: str, status: str) -> None:
+    manifest = storage.read_manifest(source_slug)
+    for e in manifest.get("entries", []):
+        if e.get("slug") == creature_slug:
+            e["status"] = status
+    storage.write_manifest(source_slug, manifest)
+
+
+@app.post("/api/image/{source_slug}/{creature_slug}")
+def generate_image(
+    source_slug: str,
+    creature_slug: str,
+    payload: dict = Body(...),
+) -> dict:
+    """Generate gpt-image-2 candidates.
+    Body: {mode: "recreate"|"describe", setting_key, background_key, injection?, n?}.
+    Returns the candidate filenames (writes them to disk; the UI loads
+    them via /unedited/<source>/<file>)."""
+    entry = _find_manifest_entry(source_slug, creature_slug)
+    mode = payload.get("mode") or "recreate"
+    setting_key = payload.get("setting_key")
+    background_key = payload.get("background_key")
+    injection = (payload.get("injection") or "").strip() or None
+    n = int(payload.get("n") or image_gen.CANDIDATES_PER_CALL)
+    if not setting_key or not background_key:
+        raise HTTPException(status_code=400, detail="setting_key and background_key are required")
+
+    creature = storage.read_creature(source_slug, creature_slug)
+    if mode == "describe" and not creature:
+        raise HTTPException(
+            status_code=400,
+            detail="describe mode needs a converted creature JSON. Run Convert first.",
+        )
+
+    try:
+        prompt = image_gen.build_prompt(
+            setting_key=setting_key,
+            background_key=background_key,
+            mode=mode,
+            creature=creature,
+            injection=injection,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    ref_path: Path | None = None
+    if mode == "recreate":
+        ref_path = storage.creature_art_path(source_slug, creature_slug)
+        if not ref_path.exists():
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "recreate mode needs an art file on disk. Either Upload "
+                    "sketch first, or switch to describe mode."
+                ),
+            )
+
+    try:
+        blobs = image_gen.generate_candidates(
+            prompt=prompt, mode=mode, reference_image_path=ref_path, n=n,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        # OpenAI SDK errors land here; surface message for diagnosis.
+        raise HTTPException(status_code=502, detail=f"Image generation failed: {e}")
+
+    paths = image_gen.write_candidates(source_slug, creature_slug, blobs)
+    return {
+        "candidates": [p.name for p in image_gen.list_candidates(source_slug, creature_slug)],
+        "prompt": prompt,
+        "added": [p.name for p in paths],
+    }
+
+
+@app.get("/api/image/{source_slug}/{creature_slug}/candidates")
+def list_image_candidates(source_slug: str, creature_slug: str) -> dict:
+    _find_manifest_entry(source_slug, creature_slug)
+    paths = image_gen.list_candidates(source_slug, creature_slug)
+    final = image_gen.final_image_path(source_slug, creature_slug)
+    return {
+        "candidates": [p.name for p in paths],
+        "final": final.name if final.exists() else None,
+    }
+
+
+@app.post("/api/image/{source_slug}/{creature_slug}/pick")
+def pick_candidate(
+    source_slug: str,
+    creature_slug: str,
+    payload: dict = Body(...),
+) -> dict:
+    _find_manifest_entry(source_slug, creature_slug)
+    candidate = payload.get("candidate")
+    if not candidate:
+        raise HTTPException(status_code=400, detail="`candidate` filename required")
+    try:
+        final = image_gen.promote_candidate(source_slug, creature_slug, candidate)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    _set_entry_status(source_slug, creature_slug, "image-approved")
+    return {"ok": True, "final": final.name}
+
+
+@app.post("/api/image/{source_slug}/{creature_slug}/upload")
+async def upload_final_image(
+    source_slug: str, creature_slug: str, file: UploadFile = File(...)
+) -> dict:
+    """Upload a manually-sourced concept image; resized to 1024x1024 webp."""
+    _find_manifest_entry(source_slug, creature_slug)
+    raw = await file.read()
+    try:
+        final = image_gen.save_uploaded_image(source_slug, creature_slug, raw)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read image: {e}")
+    _set_entry_status(source_slug, creature_slug, "image-approved")
+    return {"ok": True, "final": final.name}
+
+
+@app.post("/api/image/{source_slug}/{creature_slug}/clear")
+def clear_image_candidates(source_slug: str, creature_slug: str) -> dict:
+    _find_manifest_entry(source_slug, creature_slug)
+    image_gen.clear_candidates(source_slug, creature_slug)
+    return {"ok": True}
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
