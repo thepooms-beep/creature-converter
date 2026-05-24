@@ -21,6 +21,11 @@ PAGE_DPI = 150
 # Haiku 4.5 is fast + cheap and handles structured-output vision well.
 # Override with SEGMENTATION_MODEL env var if needed.
 VISION_MODEL = os.getenv("SEGMENTATION_MODEL", "claude-haiku-4-5-20251001")
+# Belt-and-suspenders: pad each art bbox by this fraction of page width/height
+# before cropping, so thin extremities (tails, wings, weapons) the model missed
+# still land inside the crop. gpt-image-2 ignores stray text but suffers from
+# clipped figures, so we err toward more margin.
+ART_BBOX_PAD = 0.06
 
 
 def _load_anthropic_client():
@@ -52,6 +57,7 @@ def segment_page(client, page_img: Image.Image) -> dict[str, Any]:
     msg = client.messages.create(
         model=VISION_MODEL,
         max_tokens=1024,
+        temperature=0,
         messages=[
             {
                 "role": "user",
@@ -80,7 +86,39 @@ def _crop_art(page_img: Image.Image, bbox: list[float]) -> Image.Image | None:
     x0, y0, x1, y1 = bbox
     if not all(0.0 <= v <= 1.0 for v in bbox) or x1 <= x0 or y1 <= y0:
         return None
+    x0 = max(0.0, x0 - ART_BBOX_PAD)
+    y0 = max(0.0, y0 - ART_BBOX_PAD)
+    x1 = min(1.0, x1 + ART_BBOX_PAD)
+    y1 = min(1.0, y1 + ART_BBOX_PAD)
     return page_img.crop((int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h)))
+
+
+def _looks_like_page_banner(bbox: list[float]) -> bool:
+    """Reject bboxes that are clearly the DARK·SUN / RAVENLOFT page header logo
+    or other top/bottom decorative bands: top-anchored, short, wide."""
+    x0, y0, x1, y1 = bbox
+    height = y1 - y0
+    return y0 < 0.1 and height < 0.25
+
+
+def _dedupe_figures(figures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop figures that are likely page banners, and collapse duplicates.
+    The model occasionally emits one figure per stat-block entry even when
+    only one illustration exists on the page; this filters both."""
+    kept: list[dict[str, Any]] = []
+    for fig in figures:
+        bbox = fig.get("bbox")
+        if not bbox or len(bbox) != 4:
+            continue
+        if _looks_like_page_banner(bbox):
+            continue
+        is_dup = any(
+            all(abs(bbox[i] - k["bbox"][i]) < 0.05 for i in range(4))
+            for k in kept
+        )
+        if not is_dup:
+            kept.append(fig)
+    return kept
 
 
 def _bbox_area(bbox: list[float] | None) -> float:
@@ -100,19 +138,35 @@ def ingest_pdf(pdf_path: Path, source_slug: str) -> dict[str, Any]:
 
     pages = convert_from_path(str(pdf_path), dpi=PAGE_DPI)
 
-    # Pass 1: segment each page, collect raw hits grouped by slug.
+    # Pass 1: segment each page. Entries and figures are detected separately
+    # so we never invent a figure for an entry that wasn't drawn.
     raw_hits: dict[str, list[dict[str, Any]]] = {}
     for page_idx, page_img in enumerate(pages, start=1):
         result = segment_page(client, page_img)
         if not result.get("is_monster_page"):
             continue
-        for entry in result.get("entries", []):
+        entries_on_page = result.get("entries", [])
+        figures_on_page = _dedupe_figures(result.get("figures", []))
+        # Map slug -> first matching figure bbox on this page.
+        figure_by_slug: dict[str, list[float]] = {}
+        for fig in figures_on_page:
+            depicts = (fig.get("depicts") or "").strip()
+            bbox = fig.get("bbox")
+            if not depicts or not bbox:
+                continue
+            figure_by_slug.setdefault(storage.slugify(depicts), bbox)
+        for entry in entries_on_page:
             name = (entry.get("name") or "").strip()
             if not name:
                 continue
             slug = storage.slugify(name)
             raw_hits.setdefault(slug, []).append(
-                {"page": page_idx, "page_img": page_img, "name": name, "bbox": entry.get("art_bbox")}
+                {
+                    "page": page_idx,
+                    "page_img": page_img,
+                    "name": name,
+                    "bbox": figure_by_slug.get(slug),
+                }
             )
 
     # Pass 2: merge hits per slug. Save every page the creature appears on,
