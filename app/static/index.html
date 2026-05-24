@@ -499,6 +499,23 @@
               </div>
             </template>
           </div>
+
+          <!-- ====================== APPROVE ====================== -->
+          <div class="card">
+            <div class="section-label">Approve for export</div>
+            <p style="color:var(--text3);font-size:14px;margin-bottom:10px">
+              Flattens this creature's edited stat block into the <code>monsters.js</code> shape and copies the export-quality webp into <code>edited\</code>. Re-run anytime after further edits.
+            </p>
+            <div class="btn-row">
+              <button class="btn btn-primary" @click="approve()" :disabled="approving"
+                      x-text="approving ? 'Approving…' : (approvedAt ? 'Re-approve' : 'Approve')"></button>
+              <span class="ok-msg" x-show="approvedAt" x-text="approvedAt"></span>
+            </div>
+            <div class="status err" x-text="approveError"></div>
+            <p class="status" x-show="!imgFinal" style="color:var(--text3)">
+              No final concept art picked yet. Approving now will write the flat JSON but skip the image copy; you can re-approve after picking an image.
+            </p>
+          </div>
         </div>
       </template>
     </div>
@@ -542,8 +559,31 @@ function app() {
     imgStatus: '',
     imgCacheBust: Date.now(),
     lightboxSrc: '',
+    approving: false,
+    approvedAt: '',
+    approveError: '',
 
     openLightbox(src) { this.lightboxSrc = src; },
+
+    async approve() {
+      if (!this.activeEntry) return;
+      this.approving = true;
+      this.approveError = '';
+      try {
+        const r = await fetch(
+          `/api/approve/${this.activeSource}/${this.activeEntry.slug}`,
+          {method:'POST'}
+        );
+        if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+        const d = await r.json();
+        this.approvedAt = `Approved ${new Date().toLocaleTimeString()} (status: ${d.status})`;
+        await this.refreshManifest();
+      } catch (e) {
+        this.approveError = `Approve failed: ${e.message}`;
+      } finally {
+        this.approving = false;
+      }
+    },
 
     async init() {
       this.health = await (await fetch('/api/health')).json();
@@ -595,6 +635,8 @@ function app() {
       this.imgError = '';
       this.imgStatus = '';
       this.imgInjection = '';
+      this.approvedAt = '';
+      this.approveError = '';
       // Try to load existing converted JSON; 404 means not yet converted.
       const r = await fetch(`/api/creature/${this.activeSource}/${slug}`);
       if (r.ok) {

@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
-from . import conversion, image_gen, segmentation, storage
+from . import conversion, flatten, image_gen, segmentation, storage
 
 load_dotenv()
 
@@ -306,6 +306,34 @@ def clear_image_candidates(source_slug: str, creature_slug: str) -> dict:
     _find_manifest_entry(source_slug, creature_slug)
     image_gen.clear_candidates(source_slug, creature_slug)
     return {"ok": True}
+
+
+@app.post("/api/approve/{source_slug}/{creature_slug}")
+def approve_creature(source_slug: str, creature_slug: str) -> dict:
+    """Flatten the nested JSON to the monsters.js shape and move it into
+    edited/<source>/. Also copies the export-quality webp if one exists.
+    Status: 'approved' when both text and image are ready, otherwise
+    'text-approved' (image still pending)."""
+    entry = _find_manifest_entry(source_slug, creature_slug)
+    try:
+        result = flatten.approve_creature(source_slug, creature_slug)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    new_status = "approved" if result["image_copied"] else "text-approved"
+    _set_entry_status(source_slug, creature_slug, new_status)
+    result["status"] = new_status
+    return result
+
+
+@app.get("/api/edited/{source_slug}/{creature_slug}")
+def get_edited(source_slug: str, creature_slug: str) -> JSONResponse:
+    """Return the flat record currently in edited/, if any. Used by the UI
+    to show whether the creature has been approved."""
+    _find_manifest_entry(source_slug, creature_slug)
+    p = flatten.edited_dir(source_slug) / f"{creature_slug}.json"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="Not approved yet")
+    return JSONResponse(json.loads(p.read_text(encoding="utf-8")))
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

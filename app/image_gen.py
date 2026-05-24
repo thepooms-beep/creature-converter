@@ -35,6 +35,16 @@ IMAGE_SIZE = "1024x1024"
 IMAGE_QUALITY = "auto"
 CANDIDATES_PER_CALL = 2
 
+# Two image tiers per user spec:
+# - Candidates and the hi-res archive copy: raw PNG (~2 MB) at full quality
+#   from gpt-image-2, so the lightbox preview shows true detail and the
+#   archival copy is bit-perfect.
+# - Export copy for DM CM (Monsterpedia thumbnail loads): webp targeting
+#   ~100 KB. SOFT target — stops degrading quality below webp 60 even if
+#   the result is over 100 KB, to keep images looking decent.
+EXPORT_TARGET_KB = 100
+EXPORT_QUALITY_FLOOR = 60
+
 # Per brief: "based on the attached reference sketch — preserve the
 # character's pose, proportions, silhouette, gear, and key design details
 # exactly as drawn." This clause appears at the start of every master
@@ -237,16 +247,37 @@ def _extract_b64(image_obj: Any) -> str | None:
     return None
 
 
-def _png_to_webp(png_or_other_bytes: bytes) -> bytes:
-    """Normalize any image bytes to 1024x1024 webp."""
-    with Image.open(io.BytesIO(png_or_other_bytes)) as img:
+def _normalize_to_png(raw: bytes) -> bytes:
+    """Normalize whatever bytes we got to a 1024x1024 RGB PNG (archive tier)."""
+    with Image.open(io.BytesIO(raw)) as img:
         if img.mode != "RGB":
             img = img.convert("RGB")
         if img.size != (1024, 1024):
             img = img.resize((1024, 1024), Image.LANCZOS)
         buf = io.BytesIO()
-        img.save(buf, format="WEBP", quality=92)
+        img.save(buf, format="PNG", optimize=True)
         return buf.getvalue()
+
+
+def _compress_to_webp(raw: bytes, target_kb: int = EXPORT_TARGET_KB,
+                      quality_floor: int = EXPORT_QUALITY_FLOOR) -> bytes:
+    """Compress to webp targeting ~target_kb. Tries descending quality and
+    returns the first result that fits the target. If none fit by the time
+    we hit quality_floor, returns the quality_floor result anyway so we
+    don't degrade past visual usability."""
+    with Image.open(io.BytesIO(raw)) as img:
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        if img.size != (1024, 1024):
+            img = img.resize((1024, 1024), Image.LANCZOS)
+        last = b""
+        for q in (90, 80, 75, 70, 65, quality_floor):
+            buf = io.BytesIO()
+            img.save(buf, format="WEBP", quality=q, method=6)
+            last = buf.getvalue()
+            if len(last) <= target_kb * 1024:
+                return last
+        return last  # at quality_floor; may exceed target_kb (soft cap).
 
 
 def generate_candidates(
@@ -282,7 +313,7 @@ def generate_candidates(
         if not b64:
             continue
         raw = base64.b64decode(b64)
-        out.append(_png_to_webp(raw))
+        out.append(_normalize_to_png(raw))
     return out
 
 
@@ -291,14 +322,15 @@ def generate_candidates(
 # ---------------------------------------------------------------------------
 
 def candidate_path(source_slug: str, creature_slug: str, idx: int) -> Path:
-    return storage.UNEDITED_DIR / source_slug / f"{creature_slug}-cand-{idx}.webp"
+    return storage.UNEDITED_DIR / source_slug / f"{creature_slug}-cand-{idx}.png"
 
 
 def write_candidates(source_slug: str, creature_slug: str, images: list[bytes]) -> list[Path]:
-    """Append candidates after any existing ones, return the new paths."""
+    """Append candidates after any existing ones, return the new paths.
+    Candidates are stored as full-quality PNG for lightbox preview."""
     src_dir = storage.UNEDITED_DIR / source_slug
     src_dir.mkdir(parents=True, exist_ok=True)
-    existing = sorted(src_dir.glob(f"{creature_slug}-cand-*.webp"))
+    existing = sorted(src_dir.glob(f"{creature_slug}-cand-*.png"))
     start = len(existing)
     paths: list[Path] = []
     for i, blob in enumerate(images):
@@ -310,7 +342,7 @@ def write_candidates(source_slug: str, creature_slug: str, images: list[bytes]) 
 
 def list_candidates(source_slug: str, creature_slug: str) -> list[Path]:
     src_dir = storage.UNEDITED_DIR / source_slug
-    return sorted(src_dir.glob(f"{creature_slug}-cand-*.webp"))
+    return sorted(src_dir.glob(f"{creature_slug}-cand-*.png"))
 
 
 def clear_candidates(source_slug: str, creature_slug: str) -> None:
@@ -319,25 +351,42 @@ def clear_candidates(source_slug: str, creature_slug: str) -> None:
 
 
 def final_image_path(source_slug: str, creature_slug: str) -> Path:
+    """The export-quality webp (~100 KB target) DM CM will load."""
     return storage.UNEDITED_DIR / source_slug / f"{creature_slug}.webp"
 
 
+def hires_image_path(source_slug: str, creature_slug: str) -> Path:
+    """The full-quality PNG archive (~2 MB) for re-derivation later."""
+    return storage.UNEDITED_DIR / source_slug / f"{creature_slug}-hires.png"
+
+
+def _save_dual_output(source_slug: str, creature_slug: str, raw_png_bytes: bytes) -> Path:
+    """Save the archival hi-res PNG and the compressed export webp.
+    Returns the path to the export webp."""
+    hires = hires_image_path(source_slug, creature_slug)
+    hires.write_bytes(raw_png_bytes)
+    final = final_image_path(source_slug, creature_slug)
+    final.write_bytes(_compress_to_webp(raw_png_bytes))
+    return final
+
+
 def promote_candidate(source_slug: str, creature_slug: str, candidate_filename: str) -> Path:
-    """Move the chosen candidate to <slug>.webp and discard the rest."""
+    """Promote the chosen candidate: keep PNG as <slug>-hires.png archive,
+    write a compressed <slug>.webp for export, discard other candidates."""
     src_dir = storage.UNEDITED_DIR / source_slug
     src = src_dir / candidate_filename
     if not src.exists():
         raise FileNotFoundError(f"candidate {candidate_filename} not found")
-    final = final_image_path(source_slug, creature_slug)
-    final.write_bytes(src.read_bytes())
+    raw_png = src.read_bytes()
+    final = _save_dual_output(source_slug, creature_slug, raw_png)
     clear_candidates(source_slug, creature_slug)
     return final
 
 
 def save_uploaded_image(source_slug: str, creature_slug: str, raw: bytes) -> Path:
-    """Normalize a user-uploaded image to 1024x1024 webp and save as final."""
-    blob = _png_to_webp(raw)
-    final = final_image_path(source_slug, creature_slug)
-    final.write_bytes(blob)
+    """Normalize and save a user-uploaded image: hi-res PNG archive plus
+    compressed export webp."""
+    png_bytes = _normalize_to_png(raw)
+    final = _save_dual_output(source_slug, creature_slug, png_bytes)
     clear_candidates(source_slug, creature_slug)
     return final
