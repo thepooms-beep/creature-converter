@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import storage
+from . import segmentation, storage
 
 load_dotenv()
 
@@ -59,20 +59,28 @@ async def upload_monsters_js(file: UploadFile = File(...)) -> dict:
 
 @app.post("/api/ingest")
 async def ingest_pdf(file: UploadFile = File(...)) -> JSONResponse:
-    """PDF upload + vision segmentation. Wired in slice 1b once the segmentation prompt is finalized."""
+    """PDF upload + vision segmentation. Saves the PDF, rasterizes each page,
+    asks Claude vision which pages hold monster entries, then writes per-entry
+    page/art crops and a `_manifest.json` row per entry."""
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Upload must be a .pdf file")
     source_slug = storage.slugify(Path(file.filename).stem)
     pdf_path = storage.SOURCES_DIR / f"{source_slug}.pdf"
     pdf_path.write_bytes(await file.read())
-    # TODO(slice 1b): rasterize via pdf2image, call Claude vision to segment, write _manifest.json.
+    try:
+        manifest = segmentation.ingest_pdf(pdf_path, source_slug)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     return JSONResponse(
         {
             "source_slug": source_slug,
             "saved_to": str(pdf_path.relative_to(storage.ROOT)),
-            "status": "uploaded (segmentation not yet wired)",
+            "page_count": manifest["page_count"],
+            "entry_count": len(manifest["entries"]),
+            "status": "segmented",
         }
     )
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/unedited", StaticFiles(directory=str(storage.UNEDITED_DIR)), name="unedited")

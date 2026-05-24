@@ -30,6 +30,15 @@
   .badge.warn{color:#d6a47a}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
   .empty{color:var(--text3);font-style:italic;font-size:15px}
+  .source-pill{padding:8px 14px;cursor:pointer;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg3);color:var(--text2);font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em}
+  .source-pill:hover{border-color:var(--gold);color:var(--text)}
+  .source-pill.active{border-color:var(--gold);color:var(--gold2);background:var(--bg4)}
+  .entry-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+  .entry-card .thumb{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--bg);border-bottom:1px solid var(--border)}
+  .entry-card .thumb-empty{width:100%;aspect-ratio:1/1;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--text3);font-style:italic;font-size:13px;border-bottom:1px solid var(--border)}
+  .entry-card .meta{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+  .entry-card .name{font-family:'Cinzel',serif;font-size:14px;color:var(--text);letter-spacing:0.04em}
+  .entry-card .sub{font-size:12px;color:var(--text3)}
 </style>
 </head>
 <body x-data="app()" x-init="init()">
@@ -68,12 +77,44 @@
     <template x-if="sources.length === 0">
       <p class="empty">No sources uploaded yet.</p>
     </template>
-    <div class="grid">
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
       <template x-for="s in sources" :key="s">
-        <div class="badge" x-text="s" style="padding:10px 14px"></div>
+        <div class="source-pill" :class="s === activeSource ? 'active' : ''" x-text="s" @click="selectSource(s)"></div>
       </template>
     </div>
   </div>
+
+  <template x-if="activeSource">
+    <div class="card">
+      <div class="section-label">
+        Entries — <span x-text="activeSource"></span>
+        <span class="badge" x-text="`${manifest.entries?.length || 0} entries`" style="margin-left:10px"></span>
+      </div>
+      <template x-if="!manifest.entries || manifest.entries.length === 0">
+        <p class="empty">No entries in this source.</p>
+      </template>
+      <div class="grid">
+        <template x-for="e in (manifest.entries || [])" :key="e.slug">
+          <div class="entry-card">
+            <template x-if="e.art_image">
+              <img class="thumb" :src="`/unedited/${activeSource}/${e.art_image}`" :alt="e.name">
+            </template>
+            <template x-if="!e.art_image">
+              <div class="thumb-empty">no art</div>
+            </template>
+            <div class="meta">
+              <div class="name" x-text="e.name"></div>
+              <div class="sub">
+                p. <span x-text="e.page"></span>
+                &nbsp;·&nbsp;
+                <span class="badge" :class="e.status === 'unedited' ? 'warn' : 'ok'" x-text="e.status"></span>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
 </div>
 
 <script>
@@ -81,11 +122,20 @@ function app() {
   return {
     health: {anthropic_key_loaded:false, openai_key_loaded:false},
     sources: [],
+    activeSource: null,
+    manifest: {entries: []},
     monstersJsStatus: '',
     ingestStatus: '',
     async init() {
       this.health = await (await fetch('/api/health')).json();
+      await this.refreshSources();
+    },
+    async refreshSources() {
       this.sources = (await (await fetch('/api/sources')).json()).sources;
+    },
+    async selectSource(slug) {
+      this.activeSource = slug;
+      this.manifest = await (await fetch(`/api/manifest/${slug}`)).json();
     },
     async uploadMonstersJs(ev) {
       const file = ev.target.files[0];
@@ -100,13 +150,19 @@ function app() {
     async uploadPdf(ev) {
       const file = ev.target.files[0];
       if (!file) return;
-      this.ingestStatus = 'Uploading PDF...';
+      this.ingestStatus = `Uploading ${file.name} and segmenting pages — this can take a few minutes for large PDFs…`;
       const fd = new FormData();
       fd.append('file', file);
       const r = await fetch('/api/ingest', {method:'POST', body: fd});
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({detail: r.statusText}));
+        this.ingestStatus = `Error: ${err.detail || r.statusText}`;
+        return;
+      }
       const data = await r.json();
-      this.ingestStatus = `Uploaded as ${data.source_slug}. ${data.status}`;
-      this.sources = (await (await fetch('/api/sources')).json()).sources;
+      this.ingestStatus = `Segmented ${data.source_slug}: ${data.entry_count} entries across ${data.page_count} pages.`;
+      await this.refreshSources();
+      await this.selectSource(data.source_slug);
     },
   }
 }
