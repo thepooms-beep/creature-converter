@@ -6,7 +6,20 @@ This is a **standalone sister app** to `dm-npc-creator`. It runs entirely on you
 
 ## How records reach DM CM
 
-Approved creatures are exported as a separate `const MANUALLY_ENTERED = [...]` array — never appended to DM CM's `const MONSTERS_BUILTIN`. The two arrays live side by side in DM CM, so upstream updates to the builtin monsters never collide with your converted ones, and you can wipe / regenerate `MANUALLY_ENTERED` at any time without touching anything else.
+Each compendium PDF you ingest becomes its own manual file in DM CM, named `monster_manual_<source-slug>.js`. Every manual file uses the same envelope:
+
+```js
+(window.MONSTER_MANUALS_DATA = window.MONSTER_MANUALS_DATA || []).push(
+{...record 1...},
+{...record 2...}
+);
+```
+
+DM CM loads every `monster_manual_*.js` it finds; each file appends its records to the shared `window.MONSTER_MANUALS_DATA` array. This means:
+
+- You can keep adding new manual files over time without touching the existing ones.
+- DM CM's `MONSTERS_BUILTIN` is never modified — your converted creatures live alongside the built-ins.
+- Re-exporting wipes and regenerates every `monster_manual_*.js` in `release/`. Approvals you've removed from `edited/` won't leave stale files behind.
 
 ## One-time setup
 
@@ -70,7 +83,7 @@ git push
    - Edit any field in the form. Re-run conversion with notes if needed.
    - Generate concept art (gpt-image-2 in recreate or describe mode) or upload your own. Pick a candidate.
    - Hit **Approve** — flattens the JSON to the `monsters.js` shape and copies the chosen webp into `edited/`.
-3. **Hit Build release bundle** (top of the home page) — writes `release/manually_entered.js` (one minified line, ready to paste into DM CM) and `release/assets/monster_images/<slug>.webp` for every approved creature. Copy these into your DM CM checkout by hand.
+3. **Hit Build release bundle** (top of the home page) — for each source slug with approved creatures, writes `release/monster_manual_<source>.js` in the `window.MONSTER_MANUALS_DATA.push(...)` format DM CM expects, plus `release/assets/monster_images/<slug>.webp` for every approved creature. Copy these into your DM CM checkout by hand.
 
 The Export card warns about any approved creatures that don't yet have concept art (amber badge) and refuses to build if two approvals collide on the same id.
 
@@ -83,7 +96,7 @@ creature-converter/
 ├── unedited/<source-slug>/         # nested JSON + page/art crops + candidates (gitignored)
 ├── edited/<source-slug>/           # approved flat JSON + final webp (gitignored)
 └── release/                        # built export bundle (gitignored)
-    ├── manually_entered.js
+    ├── monster_manual_<source>.js  # one file per compendium PDF
     └── assets/monster_images/
 ```
 
@@ -93,4 +106,4 @@ creature-converter/
 python -m pytest tests/
 ```
 
-48 tests covering the flatten transformer (every rule in the brief) and the release-bundle exporter (collision detection, missing-image reporting, stale cleanup, formatting).
+51 tests covering the flatten transformer (every rule in the brief) and the release-bundle exporter (`.push()` envelope, per-source file splitting, collision detection, missing-image reporting, stale cleanup).

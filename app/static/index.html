@@ -115,25 +115,36 @@
   <div class="card" x-show="!activeEntry">
     <div class="section-label">Export</div>
     <p style="margin-bottom:10px">
-      Bundles every approved creature into
-      <code>release/manually_entered.js</code> (one minified line, ready to paste
-      into DM CM as <code>const MANUALLY_ENTERED = [...]</code>) plus
-      <code>release/assets/monster_images/&lt;slug&gt;.webp</code>. Copy the
-      contents into your DM CM checkout.
+      Bundles approved creatures into <code>release/monster_manual_&lt;source&gt;.js</code>
+      (one file per compendium PDF) plus <code>release/assets/monster_images/&lt;slug&gt;.webp</code>.
+      Each file uses the <code>window.MONSTER_MANUALS_DATA.push(...)</code>
+      envelope DM CM expects. Copy the contents into your DM CM checkout.
     </p>
-    <template x-if="exportSummary.count === 0">
+    <template x-if="exportSummary.total_count === 0">
       <p class="empty">No approved creatures yet. Approve a creature from its detail page to add it here.</p>
     </template>
-    <template x-if="exportSummary.count > 0">
+    <template x-if="exportSummary.total_count > 0">
       <div>
-        <p style="margin-bottom:8px"><span x-text="exportSummary.count"></span> creature<span x-show="exportSummary.count !== 1">s</span> ready for export:</p>
-        <div class="pill-list" style="margin-bottom:10px">
-          <template x-for="e in exportSummary.entries" :key="`${e.source}/${e.slug}`">
-            <span class="badge" :class="e.has_image ? 'ok' : 'warn'"
-                  :title="e.has_image ? 'webp ready' : 'no concept art yet'"
-                  x-text="e.name || e.slug"></span>
-          </template>
-        </div>
+        <p style="margin-bottom:10px">
+          <span x-text="exportSummary.total_count"></span> creature<span x-show="exportSummary.total_count !== 1">s</span>
+          across <span x-text="exportSummary.manuals.length"></span>
+          manual<span x-show="exportSummary.manuals.length !== 1">s</span>:
+        </p>
+        <template x-for="m in exportSummary.manuals" :key="m.source_slug">
+          <div class="row-card">
+            <div class="row-head">
+              <code x-text="m.file_name"></code>
+              <span class="badge info" x-text="`${m.count} record${m.count !== 1 ? 's' : ''}`"></span>
+            </div>
+            <div class="pill-list">
+              <template x-for="e in m.entries" :key="e.slug">
+                <span class="badge" :class="e.has_image ? 'ok' : 'warn'"
+                      :title="e.has_image ? 'webp ready' : 'no concept art yet'"
+                      x-text="e.name || e.slug"></span>
+              </template>
+            </div>
+          </div>
+        </template>
         <div class="btn-row">
           <button class="btn btn-primary" @click="runExport()" :disabled="exporting"
                   x-text="exporting ? 'Bundling…' : 'Build release bundle'"></button>
@@ -569,7 +580,7 @@ function app() {
     savedAt: '',
     rerunNotes: '',
     ingestStatus: '',
-    exportSummary: {count: 0, entries: []},
+    exportSummary: {total_count: 0, manuals: []},
     exporting: false,
     exportStatus: '',
     exportError: '',
@@ -647,11 +658,12 @@ function app() {
         const r = await fetch('/api/export', {method:'POST'});
         const d = await r.json();
         if (!r.ok) throw new Error(d.detail || r.statusText);
+        const fileNames = d.manuals.map(m => m.file_name).join(', ');
         const missing = d.images_missing.length;
         const missingNote = missing
           ? ` (${missing} without concept art: ${d.images_missing.join(', ')})`
           : '';
-        this.exportStatus = `Wrote ${d.js_file} with ${d.record_count} record${d.record_count !== 1 ? 's' : ''}; ${d.images_copied.length} image${d.images_copied.length !== 1 ? 's' : ''} copied${missingNote}.`;
+        this.exportStatus = `Wrote ${d.manuals.length} manual${d.manuals.length !== 1 ? 's' : ''} (${fileNames}) totalling ${d.total_records} record${d.total_records !== 1 ? 's' : ''}; ${d.images_copied.length} image${d.images_copied.length !== 1 ? 's' : ''} copied${missingNote}.`;
       } catch (e) {
         this.exportError = `Export failed: ${e.message}`;
       } finally {

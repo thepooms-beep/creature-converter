@@ -319,20 +319,27 @@ def approve_creature(source_slug: str, creature_slug: str) -> dict:
 
 @app.get("/api/export/summary")
 def export_summary() -> dict:
-    """List every approved creature awaiting export, plus image status."""
+    """Pending approvals grouped by source, with the manual filename each
+    group will produce on export and per-creature image status."""
     records = export.collect_records()
-    return {
-        "count": len(records),
-        "entries": [
-            {
-                "source": src,
-                "slug": rec["id"],
-                "name": rec.get("name", ""),
-                "has_image": path.with_suffix(".webp").exists(),
-            }
-            for src, path, rec in records
-        ],
-    }
+    grouped = export.group_by_source(records)
+    manuals = [
+        {
+            "source_slug": src,
+            "file_name": export.manual_file_name(src),
+            "count": len(entries),
+            "entries": [
+                {
+                    "slug": rec["id"],
+                    "name": rec.get("name", ""),
+                    "has_image": path.with_suffix(".webp").exists(),
+                }
+                for path, rec in entries
+            ],
+        }
+        for src, entries in grouped.items()
+    ]
+    return {"manuals": manuals, "total_count": len(records)}
 
 
 @app.post("/api/export")
