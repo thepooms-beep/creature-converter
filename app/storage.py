@@ -32,13 +32,13 @@ def read_manifest(source_slug: str) -> dict[str, Any]:
     p = manifest_path(source_slug)
     if not p.exists():
         return {"source_slug": source_slug, "entries": []}
-    return json.loads(p.read_text())
+    return json.loads(p.read_text(encoding="utf-8"))
 
 
 def write_manifest(source_slug: str, manifest: dict[str, Any]) -> None:
     p = manifest_path(source_slug)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(manifest, indent=2))
+    p.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def list_sources() -> list[str]:
@@ -59,13 +59,13 @@ def read_creature(source_slug: str, creature_slug: str) -> dict[str, Any] | None
     p = creature_json_path(source_slug, creature_slug)
     if not p.exists():
         return None
-    return json.loads(p.read_text())
+    return json.loads(p.read_text(encoding="utf-8"))
 
 
 def write_creature(source_slug: str, creature_slug: str, data: dict[str, Any]) -> None:
     p = creature_json_path(source_slug, creature_slug)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(data, indent=2))
+    p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def source_image_paths(source_slug: str, creature_slug: str) -> list[Path]:

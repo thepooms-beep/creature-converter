@@ -15,7 +15,7 @@ from pdf2image import convert_from_path
 from . import storage
 
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
-SEG_PROMPT = (PROMPTS_DIR / "segmentation_prompt.md").read_text()
+SEG_PROMPT = (PROMPTS_DIR / "segmentation_prompt.md").read_text(encoding="utf-8")
 
 PAGE_DPI = 150
 # Haiku 4.5 is fast + cheap and handles structured-output vision well.

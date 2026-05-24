@@ -14,7 +14,7 @@ from PIL import Image
 from . import storage
 
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
-CONVERSION_PROMPT = (PROMPTS_DIR / "conversion_prompt.md").read_text()
+CONVERSION_PROMPT = (PROMPTS_DIR / "conversion_prompt.md").read_text(encoding="utf-8")
 
 # Opus 4.7 for the actual conversion -- complex reasoning over the stat math,
 # CR snap, save proficiencies, AD&D -> 5.5e trait translation. Override via env.
