@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creatures Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+  :root {
+    --bg:#0d0c0a; --bg2:#141210; --bg3:#1c1916; --bg4:#252220;
+    --border:rgba(180,150,90,0.18); --border2:rgba(180,150,90,0.35);
+    --gold:#c9a84c; --gold2:#e8c97a; --gold3:#f5e0a0;
+    --text:#e8e0d0; --text2:#b0a898; --text3:#7a7268;
+    --radius:6px; --radius2:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:18px;line-height:1.6}
+  .wrap{max-width:1200px;margin:0 auto;padding:32px 24px 60px}
+  h1{font-family:'Cinzel',serif;font-size:24px;color:var(--gold2);letter-spacing:0.06em;margin-bottom:4px}
+  .subtitle{color:var(--text3);font-style:italic;margin-bottom:28px;font-size:14px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:20px;margin-bottom:18px}
+  .section-label{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.12em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.07em;cursor:pointer;transition:all 0.18s}
+  .btn:hover{background:var(--bg4);color:var(--text);border-color:var(--gold)}
+  input[type=file]{color:var(--text2);font-family:inherit;font-size:15px}
+  .status{font-size:14px;color:var(--text3);margin-top:10px;min-height:18px;font-style:italic}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--text2);font-size:12px;letter-spacing:0.04em}
+  .badge.ok{color:#7ad67a}
+  .badge.warn{color:#d6a47a}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .empty{color:var(--text3);font-style:italic;font-size:15px}
+</style>
+</head>
+<body x-data="app()" x-init="init()">
+<div class="wrap">
+  <h1>Creatures Converter</h1>
+  <p class="subtitle">AD&amp;D → D&amp;D 2024 stat blocks + concept art for the DM Campaign Manager</p>
+
+  <div class="card">
+    <div class="section-label">Health</div>
+    <p>
+      Anthropic key:
+      <span class="badge" :class="health.anthropic_key_loaded ? 'ok' : 'warn'"
+            x-text="health.anthropic_key_loaded ? 'loaded' : 'missing'"></span>
+      &nbsp;&nbsp;OpenAI key:
+      <span class="badge" :class="health.openai_key_loaded ? 'ok' : 'warn'"
+            x-text="health.openai_key_loaded ? 'loaded' : 'missing'"></span>
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="section-label">1. Current monsters.js</div>
+    <p style="margin-bottom:10px">Upload your current DM CM <code>monsters.js</code> so existing records are preserved on export.</p>
+    <input type="file" accept=".js" @change="uploadMonstersJs($event)">
+    <div class="status" x-text="monstersJsStatus"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">2. Compendium PDF</div>
+    <p style="margin-bottom:10px">Upload a scanned monster compendium. Segmentation runs after upload.</p>
+    <input type="file" accept=".pdf" @change="uploadPdf($event)">
+    <div class="status" x-text="ingestStatus"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Sources</div>
+    <template x-if="sources.length === 0">
+      <p class="empty">No sources uploaded yet.</p>
+    </template>
+    <div class="grid">
+      <template x-for="s in sources" :key="s">
+        <div class="badge" x-text="s" style="padding:10px 14px"></div>
+      </template>
+    </div>
+  </div>
+</div>
+
+<script>
+function app() {
+  return {
+    health: {anthropic_key_loaded:false, openai_key_loaded:false},
+    sources: [],
+    monstersJsStatus: '',
+    ingestStatus: '',
+    async init() {
+      this.health = await (await fetch('/api/health')).json();
+      this.sources = (await (await fetch('/api/sources')).json()).sources;
+    },
+    async uploadMonstersJs(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      this.monstersJsStatus = 'Uploading...';
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/api/monsters-js', {method:'POST', body: fd});
+      const data = await r.json();
+      this.monstersJsStatus = `Saved (${(data.size_bytes/1024).toFixed(1)} KB).`;
+    },
+    async uploadPdf(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      this.ingestStatus = 'Uploading PDF...';
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/api/ingest', {method:'POST', body: fd});
+      const data = await r.json();
+      this.ingestStatus = `Uploaded as ${data.source_slug}. ${data.status}`;
+      this.sources = (await (await fetch('/api/sources')).json()).sources;
+    },
+  }
+}
+</script>
+</body>
+</html>

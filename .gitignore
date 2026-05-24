@@ -1,0 +1,21 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# Local data (per-user, not in repo)
+sources/
+unedited/
+edited/
+output/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

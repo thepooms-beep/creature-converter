@@ -1,0 +1,47 @@
+{
+  "name": "Werebat",
+  "read_aloud": "A gaunt humanoid with leathery wings, fanged maw, and eyes that glow red in the dark.",
+  "salient_features": [
+    {"title": "Three Forms", "text": "A true werebat shifts freely between human, giant bat, and bat-humanoid hybrid. Infected werebats lose access to one form, marking them apart from the bloodline."},
+    {"title": "Children of the Night", "text": "Werebats roost in cave colonies of 20 to 200 common bats and a dozen giant bats, all of whom obey the family that rules them."},
+    {"title": "Predators, Not Monsters", "text": "Werebats see humans and demihumans as livestock rather than enemies — calm, unhurried, and patient hunters who simply place themselves higher on the food chain."}
+  ],
+  "size": "Medium",
+  "type": "Monstrosity",
+  "tags": ["Shapechanger"],
+  "alignment": "Neutral Evil",
+  "ac": {"value": 13, "notes": "12 in humanoid form"},
+  "hp": {"average": 58, "formula": "9d8 + 18"},
+  "initiative": "+4",
+  "speeds": [
+    {"type": "walk", "value": 30},
+    {"type": "fly", "value": 40, "notes": "bat or hybrid form only"}
+  ],
+  "abilities": {"str": 15, "dex": 15, "con": 14, "int": 10, "wis": 11, "cha": 10},
+  "save_proficiencies": ["DEX"],
+  "skills": {"Perception": 4, "Stealth": 4},
+  "damage_immunities": ["Bludgeoning, Piercing, Slashing damage from nonmagical attacks that aren't silvered"],
+  "senses": ["Blindsight 60 ft. (bat or hybrid form only)", "Darkvision 60 ft.", "Passive Perception 14"],
+  "languages": ["Common (can't speak in bat form)"],
+  "cr": 3,
+  "xp": 700,
+  "pb": 2,
+  "traits": [
+    {"name": "Shapechanger", "text": "As a Bonus Action, the werebat shifts between Humanoid, Giant Bat, or Hybrid form. It loses its fly speed outside bat or hybrid form. It reverts to humanoid form on death."},
+    {"name": "Echolocation", "text": "The werebat's Blindsight is lost while it can't hear."},
+    {"name": "Sunlight Sensitivity", "text": "While in sunlight, the werebat has Disadvantage on attack rolls and on Wisdom (Perception) checks that rely on sight."}
+  ],
+  "actions": [
+    {"name": "Multiattack", "text": "The werebat makes three attacks in Hybrid form (two Claws and one Bite), or one Bite in Bat form."},
+    {"name": "Claw (Hybrid Form Only)", "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Slashing damage."},
+    {"name": "Bite (Bat or Hybrid Form Only)", "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage. If the target is a Humanoid, it must succeed on a DC 12 Constitution save or be cursed with werebat lycanthropy."},
+    {"name": "Blood Drain (Bat Form Only, Recharge 5-6)", "text": "Constitution Saving Throw: DC 12, one creature Grappled by the werebat. Failure: 10 (3d6) Necrotic damage, and the werebat regains hit points equal to the damage dealt. Success: Half damage."}
+  ],
+  "habitat": ["Forest", "Underdark"],
+  "setting": "Ravenloft",
+  "source": {
+    "title": "TSR 02122 — AD&D Ravenloft MC10 Monstrous Compendium",
+    "url": "https://archive.org/details/tsr02122addravenloftmc10monstrouscompendium"
+  },
+  "conversion_notes": "AD&D HD 4+2 plus flight, lycanthropy curse, and silver-only immunity → CR 3 (mirrors 5e werewolf baseline)."
+}
