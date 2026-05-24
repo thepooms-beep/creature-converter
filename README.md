@@ -2,58 +2,95 @@
 
 A local web app that converts AD&D 2e monster entries (from scanned PDF compendiums) into D&D 2024 ("5.5e") stat blocks compatible with the DM Campaign Manager's `monsters.js` database, and generates matching concept art via `gpt-image-2`.
 
-This is a **standalone sister app** to `dm-npc-creator`. It runs entirely on your machine — no GitHub push, no cloud storage. The end product is two artifacts you upload manually to the DM CM repo:
-1. An updated `monsters.js`
-2. A folder of `.webp` images
+This is a **standalone sister app** to `dm-npc-creator`. It runs entirely on your machine — no cloud storage. The end product is a bundle in `release/` that you copy into the DM CM repo by hand.
+
+## How records reach DM CM
+
+Approved creatures are exported as a separate `const MANUALLY_ENTERED = [...]` array — never appended to DM CM's `const MONSTERS_BUILTIN`. The two arrays live side by side in DM CM, so upstream updates to the builtin monsters never collide with your converted ones, and you can wipe / regenerate `MANUALLY_ENTERED` at any time without touching anything else.
 
 ## One-time setup
 
-You need Python 3.11+ and the system tool `poppler-utils` (for rasterizing PDFs).
+You need Python 3.11+ and `poppler` (for rasterizing PDFs).
 
-### macOS
+**Windows:** download a poppler build (e.g. from the `oschwartz10612/poppler-windows` releases) and unzip somewhere stable. Set `POPPLER_PATH` in `.env` to its `bin/` folder.
 
-```bash
-brew install poppler
-```
+**macOS:** `brew install poppler`
 
-### Ubuntu / Debian
+**Ubuntu / Debian:** `sudo apt install poppler-utils`
 
-```bash
-sudo apt install poppler-utils
-```
-
-### Then, in this folder
+Then in the project folder:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
+python -m venv venv
+venv\Scripts\activate         # Windows
+# source venv/bin/activate    # macOS / Linux
 pip install -r requirements.txt
-cp .env.example .env           # then edit `.env` and paste your API keys
+copy .env.example .env        # Windows  (cp on macOS / Linux)
+# edit .env and paste your ANTHROPIC_API_KEY + OPENAI_API_KEY
 ```
 
-## Running
+## Daily startup — after you've closed everything
+
+Open a terminal in the project folder (`C:\Users\oscar\Documents\creature-converter`) and run:
 
 ```bash
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+venv\Scripts\activate
+uvicorn app.main:app --reload
 ```
 
-Then open <http://localhost:8000> in your browser.
+Then open <http://localhost:8000> in your browser. That's it.
+
+To stop: `Ctrl+C` in the terminal, close the browser tab.
+
+## Pulling updates from Claude
+
+When Claude works on the app in a cloud session, the changes land on a branch (e.g. `claude/beautiful-knuth-4K6nz`) in your GitHub repo — not on your laptop. To see them locally:
+
+```bash
+git fetch origin
+git checkout claude/beautiful-knuth-4K6nz    # or whatever branch Claude used
+git pull
+```
+
+Then restart uvicorn (`Ctrl+C`, then `uvicorn app.main:app --reload`) and hard-reload the browser (`Ctrl+Shift+R`). Verify with `git log --oneline -3` — the latest commit should be at the top.
+
+When you're happy with a branch, merge it into `main`:
+
+```bash
+git checkout main
+git merge claude/beautiful-knuth-4K6nz
+git push
+```
 
 ## How a session works
 
-1. **Upload your current `monsters.js`** — sets the base for the final export.
-2. **Upload a compendium PDF** — the app segments it into per-creature page crops and extracts the creature art from each page.
-3. **For each creature**: convert the stat block to 5.5e, edit if needed, generate or upload an image, then approve.
-4. **Hit Export** — produces `output/monsters.js` (your existing records + new ones) and `output/monster_images/<slug>.webp`. Drop these into the DM CM repo manually.
+1. **Upload a compendium PDF** — Claude vision segments it into per-creature page crops and extracts the creature art from each page.
+2. **For each creature:**
+   - Convert the AD&D stat block to 5.5e (Opus 4.7).
+   - Edit any field in the form. Re-run conversion with notes if needed.
+   - Generate concept art (gpt-image-2 in recreate or describe mode) or upload your own. Pick a candidate.
+   - Hit **Approve** — flattens the JSON to the `monsters.js` shape and copies the chosen webp into `edited/`.
+3. **Hit Build release bundle** (top of the home page) — writes `release/manually_entered.js` (one minified line, ready to paste into DM CM) and `release/assets/monster_images/<slug>.webp` for every approved creature. Copy these into your DM CM checkout by hand.
+
+The Export card warns about any approved creatures that don't yet have concept art (amber badge) and refuses to build if two approvals collide on the same id.
 
 ## Folder layout
 
 ```
 creature-converter/
 ├── app/                            # FastAPI backend + static UI
-├── sources/                        # uploaded PDFs + uploaded monsters.js (gitignored)
-├── unedited/<source-slug>/         # nested JSON + page/art crops (gitignored)
-├── edited/<source-slug>/           # flat JSON + .webp (gitignored)
-└── output/                         # final monsters.js + image folder (gitignored)
+├── sources/                        # uploaded PDFs (gitignored)
+├── unedited/<source-slug>/         # nested JSON + page/art crops + candidates (gitignored)
+├── edited/<source-slug>/           # approved flat JSON + final webp (gitignored)
+└── release/                        # built export bundle (gitignored)
+    ├── manually_entered.js
+    └── assets/monster_images/
 ```
+
+## Tests
+
+```bash
+python -m pytest tests/
+```
+
+48 tests covering the flatten transformer (every rule in the brief) and the release-bundle exporter (collision detection, missing-image reporting, stale cleanup, formatting).
