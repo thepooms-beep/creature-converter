@@ -105,7 +105,7 @@
             <div class="meta">
               <div class="name" x-text="e.name"></div>
               <div class="sub">
-                p. <span x-text="e.page"></span>
+                pp. <span x-text="(e.pages || []).join(', ')"></span>
                 &nbsp;·&nbsp;
                 <span class="badge" :class="e.status === 'unedited' ? 'warn' : 'ok'" x-text="e.status"></span>
               </div>
