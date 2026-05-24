@@ -94,14 +94,7 @@
   </div>
 
   <div class="card" x-show="!activeEntry">
-    <div class="section-label">1. Current monsters.js</div>
-    <p style="margin-bottom:10px">Upload your current DM CM <code>monsters.js</code> so existing records are preserved on export.</p>
-    <input type="file" accept=".js" @change="uploadMonstersJs($event)">
-    <div class="status" x-text="monstersJsStatus"></div>
-  </div>
-
-  <div class="card" x-show="!activeEntry">
-    <div class="section-label">2. Compendium PDF</div>
+    <div class="section-label">1. Compendium PDF</div>
     <p style="margin-bottom:10px">Upload a scanned monster compendium. Segmentation runs after upload.</p>
     <input type="file" accept=".pdf" @change="uploadPdf($event)">
     <div class="status" x-text="ingestStatus"></div>
@@ -117,6 +110,39 @@
         <div class="source-pill" :class="s === activeSource ? 'active' : ''" x-text="s" @click="selectSource(s)"></div>
       </template>
     </div>
+  </div>
+
+  <div class="card" x-show="!activeEntry">
+    <div class="section-label">Export</div>
+    <p style="margin-bottom:10px">
+      Bundles every approved creature into
+      <code>release/manually_entered.js</code> (one minified line, ready to paste
+      into DM CM as <code>const MANUALLY_ENTERED = [...]</code>) plus
+      <code>release/assets/monster_images/&lt;slug&gt;.webp</code>. Copy the
+      contents into your DM CM checkout.
+    </p>
+    <template x-if="exportSummary.count === 0">
+      <p class="empty">No approved creatures yet. Approve a creature from its detail page to add it here.</p>
+    </template>
+    <template x-if="exportSummary.count > 0">
+      <div>
+        <p style="margin-bottom:8px"><span x-text="exportSummary.count"></span> creature<span x-show="exportSummary.count !== 1">s</span> ready for export:</p>
+        <div class="pill-list" style="margin-bottom:10px">
+          <template x-for="e in exportSummary.entries" :key="`${e.source}/${e.slug}`">
+            <span class="badge" :class="e.has_image ? 'ok' : 'warn'"
+                  :title="e.has_image ? 'webp ready' : 'no concept art yet'"
+                  x-text="e.name || e.slug"></span>
+          </template>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" @click="runExport()" :disabled="exporting"
+                  x-text="exporting ? 'Bundling…' : 'Build release bundle'"></button>
+          <button class="btn btn-tiny" @click="refreshExportSummary()" :disabled="exporting">Refresh</button>
+        </div>
+        <div class="status ok-msg" x-show="exportStatus" x-text="exportStatus"></div>
+        <div class="status err" x-text="exportError"></div>
+      </div>
+    </template>
   </div>
 
   <template x-if="activeSource && !activeEntry">
@@ -542,8 +568,11 @@ function app() {
     saving: false,
     savedAt: '',
     rerunNotes: '',
-    monstersJsStatus: '',
     ingestStatus: '',
+    exportSummary: {count: 0, entries: []},
+    exporting: false,
+    exportStatus: '',
+    exportError: '',
     sketchStatus: '',
     artCacheBust: Date.now(),
     // Concept art (slice 3)
@@ -578,6 +607,7 @@ function app() {
         const d = await r.json();
         this.approvedAt = `Approved ${new Date().toLocaleTimeString()} (status: ${d.status})`;
         await this.refreshManifest();
+        await this.refreshExportSummary();
       } catch (e) {
         this.approveError = `Approve failed: ${e.message}`;
       } finally {
@@ -589,6 +619,33 @@ function app() {
       this.health = await (await fetch('/api/health')).json();
       this.imgCatalog = await (await fetch('/api/image-prompts')).json();
       await this.refreshSources();
+      await this.refreshExportSummary();
+    },
+    async refreshExportSummary() {
+      try {
+        this.exportSummary = await (await fetch('/api/export/summary')).json();
+      } catch (e) {
+        this.exportError = `Could not load export summary: ${e.message}`;
+      }
+    },
+    async runExport() {
+      this.exporting = true;
+      this.exportStatus = '';
+      this.exportError = '';
+      try {
+        const r = await fetch('/api/export', {method:'POST'});
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || r.statusText);
+        const missing = d.images_missing.length;
+        const missingNote = missing
+          ? ` (${missing} without concept art: ${d.images_missing.join(', ')})`
+          : '';
+        this.exportStatus = `Wrote ${d.js_file} with ${d.record_count} record${d.record_count !== 1 ? 's' : ''}; ${d.images_copied.length} image${d.images_copied.length !== 1 ? 's' : ''} copied${missingNote}.`;
+      } catch (e) {
+        this.exportError = `Export failed: ${e.message}`;
+      } finally {
+        this.exporting = false;
+      }
     },
     settingOptions(key) {
       const s = (this.imgCatalog.settings || []).find(x => x.key === key);
@@ -831,16 +888,6 @@ function app() {
       this.sketchStatus = 'Sketch replaced. (Image cache refreshed.)';
       this.artCacheBust = Date.now();
       await this.refreshManifest();
-    },
-    async uploadMonstersJs(ev) {
-      const file = ev.target.files[0];
-      if (!file) return;
-      this.monstersJsStatus = 'Uploading...';
-      const fd = new FormData();
-      fd.append('file', file);
-      const r = await fetch('/api/monsters-js', {method:'POST', body: fd});
-      const data = await r.json();
-      this.monstersJsStatus = `Saved (${(data.size_bytes/1024).toFixed(1)} KB).`;
     },
     async uploadPdf(ev) {
       const file = ev.target.files[0];

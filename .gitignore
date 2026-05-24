@@ -14,6 +14,7 @@ sources/
 unedited/
 edited/
 output/
+release/
 
 # Editor / OS
 .vscode/

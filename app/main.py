@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
-from . import conversion, flatten, image_gen, segmentation, storage
+from . import conversion, export, flatten, image_gen, segmentation, storage
 
 load_dotenv()
 
@@ -50,14 +50,6 @@ def list_sources() -> dict:
 @app.get("/api/manifest/{source_slug}")
 def get_manifest(source_slug: str) -> dict:
     return storage.read_manifest(source_slug)
-
-
-@app.post("/api/monsters-js")
-async def upload_monsters_js(file: UploadFile = File(...)) -> dict:
-    """Stash the user's current monsters.js. Parser arrives in slice 4."""
-    target = storage.SOURCES_DIR / "monsters.js"
-    target.write_bytes(await file.read())
-    return {"saved_to": str(target.relative_to(storage.ROOT)), "size_bytes": target.stat().st_size}
 
 
 @app.post("/api/ingest")
@@ -323,6 +315,36 @@ def approve_creature(source_slug: str, creature_slug: str) -> dict:
     _set_entry_status(source_slug, creature_slug, new_status)
     result["status"] = new_status
     return result
+
+
+@app.get("/api/export/summary")
+def export_summary() -> dict:
+    """List every approved creature awaiting export, plus image status."""
+    records = export.collect_records()
+    return {
+        "count": len(records),
+        "entries": [
+            {
+                "source": src,
+                "slug": rec["id"],
+                "name": rec.get("name", ""),
+                "has_image": path.with_suffix(".webp").exists(),
+            }
+            for src, path, rec in records
+        ],
+    }
+
+
+@app.post("/api/export")
+def export_release() -> dict:
+    """Build release/manually_entered.js + release/assets/monster_images/.
+    Refuses to write if two approved records share an id."""
+    try:
+        return export.export_all()
+    except export.IdCollisionError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/api/edited/{source_slug}/{creature_slug}")
