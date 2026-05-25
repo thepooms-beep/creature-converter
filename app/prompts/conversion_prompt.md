@@ -58,6 +58,31 @@ A cave-dwelling forest creature gets `["Forest", "Underdark"]`. Cap at 3.
 - "Drains blood" → `Blood Drain` action (Recharge 5–6, self-heal = damage).
 - Disease/poison touch → `Poisoned` condition or custom contagion with save.
 
+## Additional 2024 design guidelines
+
+These are tendencies and conventions, not hard rules. Apply them when they fit the source material. Some restate or refine rules above — when they conflict with a specific rule earlier in this prompt, prefer the guideline below (it reflects current 2024 design intent).
+
+- **Size letters in AD&D entries**: T = Tiny, S = Small, M = Medium (Man-sized), L = Large, H = Huge, G = Gargantuan.
+- **Initiative**: typically equal to the Dex modifier, but powerful monsters often add PB (and occasionally more) on top of it.
+- **HP tends to be higher** than the AD&D equivalent. Lean toward the upper end of the HD × (avg_die + CON_mod) range rather than the bare minimum.
+- **Damage tends to be higher** too. When in doubt, round attack damage up, not down.
+- **Most on-hit effects do not allow a saving throw** in 2024 — the attack roll is the gate. Reserve saving throws for area effects, breath weapons, gaze attacks, and powerful single-target debuffs.
+- **Minimum walking speed is 5 ft.** Never emit a walk speed below that.
+- **Use bonus actions liberally** to boost action economy — convert minor self-buffs, quick movement abilities, or secondary attacks into bonus actions where it fits the creature's style.
+- **Dragons' Frightful Presence belongs in legendary actions**, not in traits or normal actions.
+- **Legendary monsters typically have both Legendary Resistance and Legendary Actions.** If the source describes a creature with that scope (ancient dragon, demon prince, lich, etc.), default to giving them both.
+- **Legendary Resistance is sometimes bumped to (4/Day)** for the most powerful creatures, with an extra +1 use while in their lair.
+- **Immunity and Resistance to damage from nonmagical, cold-iron, or silvered weapons has been removed in 5.5e.** Do not emit `Damage Immunities` or `Damage Resistances` entries that reference weapon material (nonmagical, silvered, cold iron, adamantine-vulnerable, etc.). Drop those entries entirely from the converted block. This supersedes the "Hit only by silver/+1" entry under Trait translation above.
+- **Undead defaults**: usually `Damage Immunities: Poison` and `Condition Immunities: Charmed, Exhaustion, Poisoned`.
+- **Turn Resistance has been removed in 5.5e.** Do not include it on undead, even if the AD&D source has it.
+- **Movement-condition immunities are rare** — only a handful of 2024 monsters are immune to Grappled, Paralyzed, Petrified, Prone, or Restrained. Don't emit these unless the source clearly justifies it (e.g. an incorporeal undead or a creature explicitly described as unstoppable).
+- **Lycanthrope curse — canonical wording**: when emitting the bite/claw that transmits the curse, follow this template verbatim, substituting the lycanthrope kind:
+
+      Bite (Wolf or Hybrid Form Only). Melee Attack Roll: +X, reach 5 ft. Hit: XX (XdX + X) Piercing damage. If the target is a Humanoid, it is subjected to the following effect. Constitution Saving Throw: DC XX. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Werewolf under the DM's control and has 10 Hit Points. Success: The target is immune to this werewolf's curse for 24 hours.
+
+- **Psionics ("Psionic Summary" block)**: replace 1–3 psionic abilities with similar innate spells the creature can cast without material components, using INT, WIS, or CHA (whichever is highest) to compute the spellcasting save DC and attack bonus.
+- **Multi-variant entries**: a compendium page that covers several variants of one creature (e.g. "Antloid, Desert" listing Dynamis / Soldier / Queen / Worker) should be split into individual monsters — one converted stat block per variant. If you receive an entry that still contains multiple stat blocks, convert the first variant and note the others in `conversion_notes` so the operator can re-run conversion for each.
+
 ## Output JSON schema
 
 ```json
