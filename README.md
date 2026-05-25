@@ -4,6 +4,8 @@ A local web app that converts AD&D 2e monster entries (from scanned PDF compendi
 
 This is a **standalone sister app** to `dm-npc-creator`. It runs entirely on your machine — no cloud storage. The end product is a bundle in `release/` that you copy into the DM CM repo by hand.
 
+**Looking for the operator's guide?** See [USING.md](USING.md) for the per-stage walkthrough, troubleshooting table, and recovery tips. The rest of this file is setup + dev info.
+
 ## How records reach DM CM
 
 Each compendium PDF you ingest becomes its own manual file in DM CM, named `monster_manual_<source-slug>.js`. Every manual file uses the same envelope:
