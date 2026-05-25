@@ -48,6 +48,35 @@ def _strip_json_fences(text: str) -> str:
     return t.strip()
 
 
+# AD&D source uses single letters; the converter occasionally echoes them
+# instead of the full 5.5e word. Normalize so the form's <select> matches
+# and the flatten layer outputs the correct token.
+_SIZE_LETTER_MAP = {
+    "T": "Tiny", "S": "Small", "M": "Medium",
+    "L": "Large", "H": "Huge", "G": "Gargantuan",
+}
+_SIZE_VALID = set(_SIZE_LETTER_MAP.values())
+
+
+def _normalize_size(creature: dict[str, Any]) -> None:
+    """In-place: coerce size to one of Tiny/Small/Medium/Large/Huge/Gargantuan."""
+    raw = creature.get("size")
+    if not isinstance(raw, str):
+        return
+    stripped = raw.strip()
+    if stripped in _SIZE_VALID:
+        creature["size"] = stripped
+        return
+    # "M (Man-sized)" → "M" → "Medium"; "huge" → "Huge"
+    head = stripped.split()[0].rstrip("().,;:") if stripped else ""
+    if head.upper() in _SIZE_LETTER_MAP:
+        creature["size"] = _SIZE_LETTER_MAP[head.upper()]
+        return
+    titled = stripped.title()
+    if titled in _SIZE_VALID:
+        creature["size"] = titled
+
+
 def _image_block(path: Path) -> dict[str, Any]:
     data = base64.standard_b64encode(_png_bytes(path)).decode("ascii")
     return {
@@ -127,8 +156,14 @@ def convert_creature(
                 None,
             )
             if match is not None:
+                _normalize_size(match)
                 return match
-        return parsed[0] if parsed else {}
+        picked = parsed[0] if parsed else {}
+        if isinstance(picked, dict):
+            _normalize_size(picked)
+        return picked
+    if isinstance(parsed, dict):
+        _normalize_size(parsed)
     return parsed
 
 

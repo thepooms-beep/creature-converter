@@ -272,6 +272,9 @@
               <div class="field">
                 <label>Size</label>
                 <select x-model="creature.size">
+                  <template x-if="creature.size && !['Tiny','Small','Medium','Large','Huge','Gargantuan'].includes(creature.size)">
+                    <option :value="creature.size" x-text="`? (${creature.size}) — re-run conversion`"></option>
+                  </template>
                   <template x-for="s in ['Tiny','Small','Medium','Large','Huge','Gargantuan']"><option x-text="s" :value="s"></option></template>
                 </select>
               </div>

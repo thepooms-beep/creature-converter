@@ -63,7 +63,7 @@ A cave-dwelling forest creature gets `["Forest", "Underdark"]`. Cap at 3.
 
 These are tendencies and conventions, not hard rules. Apply them when they fit the source material. Some restate or refine rules above — when they conflict with a specific rule earlier in this prompt, prefer the guideline below (it reflects current 2024 design intent).
 
-- **Size letters in AD&D entries**: T = Tiny, S = Small, M = Medium (Man-sized), L = Large, H = Huge, G = Gargantuan.
+- **Size letters in AD&D entries are a DECODING table — never emit them as output.** The AD&D source uses single letters: T = Tiny, S = Small, M = Medium (Man-sized), L = Large, H = Huge, G = Gargantuan. Translate to the corresponding full word and emit that in the `size` field. Valid `size` values are exactly: `Tiny`, `Small`, `Medium`, `Large`, `Huge`, `Gargantuan` (case-sensitive, no abbreviations, no parentheticals).
 - **Initiative**: typically equal to the Dex modifier, but powerful monsters often add PB (and occasionally more) on top of it.
 - **HP tends to be higher** than the AD&D equivalent. Lean toward the upper end of the HD × (avg_die + CON_mod) range rather than the bare minimum.
 - **Damage tends to be higher** too. When in doubt, round attack damage up, not down.
