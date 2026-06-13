@@ -96,7 +96,8 @@ In your DM CM checkout:
 
 1. Copy every `release/monster_manual_*.js` into the DM CM repo root (next to `monsters.js`).
 2. Copy every `release/assets/monster_images/*.webp` into `assets/monster_images/` in DM CM.
-3. Commit + push (or deploy via Netlify).
+3. Update Monster_Manuals.json with all active compendium names like ["monster-manual-dark-sun-mc1-v02", "monster-manual-dark-sun-wanderers-journal-v01"]
+4. Commit + push (or deploy via Netlify).
 
 DM CM picks up new manuals automatically — each one appends to `window.MONSTER_MANUALS_DATA` on page load. No code changes needed after the initial wiring.
 
