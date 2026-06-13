@@ -230,6 +230,59 @@ def test_stale_release_is_wiped_on_re_export(isolated_root):
     assert not (export.RELEASE_IMAGES_DIR / "b-rohg.webp").exists()
 
 
+# ---- manual_file_name prefix dedupe -------------------------------------
+
+def test_manual_file_name_normal_slug():
+    from app import export
+    assert export.manual_file_name("dark-sun-mc1") == "monster_manual_dark-sun-mc1.js"
+
+
+def test_manual_file_name_strips_dashed_monster_manual_prefix():
+    """Source slug from a PDF named 'Monster Manual ...' slugifies to start
+    with 'monster-manual-' — don't double up."""
+    from app import export
+    assert (
+        export.manual_file_name("monster-manual-dark-sun-mc1-v01")
+        == "monster_manual_dark-sun-mc1-v01.js"
+    )
+
+
+def test_manual_file_name_strips_underscored_monster_manual_prefix():
+    from app import export
+    assert (
+        export.manual_file_name("monster_manual_dark-sun-mc1")
+        == "monster_manual_dark-sun-mc1.js"
+    )
+
+
+def test_manual_file_name_only_strips_at_start():
+    """A slug that merely contains the substring should NOT be stripped."""
+    from app import export
+    assert (
+        export.manual_file_name("dark-sun-monster-manual-mc1")
+        == "monster_manual_dark-sun-monster-manual-mc1.js"
+    )
+
+
+def test_redundant_prefix_dedupe_end_to_end(isolated_root):
+    """A creature approved under a 'monster-manual-...' source produces
+    a single-prefix file in release/."""
+    from app import export
+
+    _approve(
+        isolated_root,
+        "monster-manual-dark-sun-mc1-v01",
+        "b-rohg",
+        {"id": "b-rohg", "name": "B'rohg"},
+    )
+    export.export_all()
+
+    expected = export.RELEASE_DIR / "monster_manual_dark-sun-mc1-v01.js"
+    redundant = export.RELEASE_DIR / "monster_manual_monster-manual-dark-sun-mc1-v01.js"
+    assert expected.exists()
+    assert not redundant.exists()
+
+
 # ---- render_manual_js helper --------------------------------------------
 
 def test_render_manual_js_uses_exact_required_opening_and_closing():

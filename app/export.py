@@ -33,6 +33,10 @@ from . import storage
 RELEASE_DIR = storage.ROOT / "release"
 RELEASE_IMAGES_DIR = RELEASE_DIR / "assets" / "monster_images"
 MANUAL_FILE_PREFIX = "monster_manual_"
+# When a source slug already starts with one of these, strip it before
+# applying the canonical prefix so "monster-manual-dark-sun-mc1" doesn't
+# become "monster_manual_monster-manual-dark-sun-mc1.js".
+_REDUNDANT_SOURCE_PREFIXES = ("monster_manual_", "monster-manual-")
 JS_OPENING = "(window.MONSTER_MANUALS_DATA = window.MONSTER_MANUALS_DATA || []).push("
 JS_CLOSING = ");"
 
@@ -42,6 +46,10 @@ class IdCollisionError(ValueError):
 
 
 def manual_file_name(source_slug: str) -> str:
+    for prefix in _REDUNDANT_SOURCE_PREFIXES:
+        if source_slug.startswith(prefix):
+            source_slug = source_slug[len(prefix):]
+            break
     return f"{MANUAL_FILE_PREFIX}{source_slug}.js"
 
 
