@@ -78,6 +78,12 @@ def _immunities_string(damage_imm: list[str], cond_imm: list[str]) -> str:
     return damage_part or cond_part
 
 
+def _resistances_string(damage_res: list[str]) -> str:
+    """'Fire, Cold, Lightning' — damage types only. D&D has no condition
+    resistances, so unlike immunities this is a single comma-joined list."""
+    return ", ".join(damage_res) if damage_res else ""
+
+
 def _senses_string(senses: list[str], passive: int | None = None) -> str:
     """Comma-joined senses, with 'Passive Perception N' appended if not
     already present. Conversion JSON usually already includes the passive
@@ -154,6 +160,7 @@ def flatten_creature(
         flat[f"{a}_save"] = _save_string(nested, a)
 
     flat["skills"] = _skills_string(nested.get("skills") or {})
+    flat["resistances"] = _resistances_string(nested.get("damage_resistances") or [])
     flat["immunities"] = _immunities_string(
         nested.get("damage_immunities") or [],
         nested.get("condition_immunities") or [],

@@ -128,6 +128,36 @@ def test_immunities_condition_only_drops_semicolon():
     assert out["immunities"] == "Charmed"
 
 
+# ---- resistances ---------------------------------------------------------
+
+def test_resistances_empty_when_absent(flat):
+    # Werebat has none.
+    assert flat["resistances"] == ""
+
+
+def test_resistances_comma_joined():
+    nested = {
+        "name": "x", "abilities": {}, "ac": {"value": 10}, "hp": {"average": 1},
+        "damage_resistances": ["Fire", "Cold", "Lightning"],
+    }
+    out = flatten_creature(nested)
+    assert out["resistances"] == "Fire, Cold, Lightning"
+
+
+def test_resistances_separate_field_from_immunities():
+    """Resistances and immunities are independent — neither should
+    contaminate the other."""
+    nested = {
+        "name": "x", "abilities": {}, "ac": {"value": 10}, "hp": {"average": 1},
+        "damage_resistances": ["Necrotic"],
+        "damage_immunities": ["Poison"],
+        "condition_immunities": ["Poisoned"],
+    }
+    out = flatten_creature(nested)
+    assert out["resistances"] == "Necrotic"
+    assert out["immunities"] == "Poison; Poisoned"
+
+
 # ---- senses --------------------------------------------------------------
 
 def test_senses_includes_passive_perception(flat):
