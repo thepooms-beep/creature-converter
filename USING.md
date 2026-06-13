@@ -15,6 +15,41 @@ Open <http://localhost:8000>. That's the whole UI.
 
 ---
 
+## Pulling the latest version
+
+Claude pushes new app changes to a feature branch in the GitHub repo (e.g. `claude/beautiful-knuth-4K6nz`). Your Windows checkout doesn't auto-update — you have to pull explicitly. Skip any of these steps and you'll keep seeing the old version.
+
+**Five steps, in order:**
+
+1. **Stop uvicorn.** In the terminal where it's running, press `Ctrl + C`. The prompt returns.
+2. **Pull the latest code.** Same terminal (or any terminal at the project folder):
+   ```
+   git fetch origin
+   git checkout claude/beautiful-knuth-4K6nz
+   git pull
+   ```
+3. **Verify.**
+   ```
+   git log --oneline -1
+   ```
+   Top line should be the commit Claude told you to expect. If not, `git pull` again.
+4. **Restart uvicorn.**
+   ```
+   uvicorn app.main:app --reload
+   ```
+   Wait for `Application startup complete`.
+5. **Hard-reload the browser.** `Ctrl + Shift + R` on the converter tab. Bypasses the cache.
+
+**If the browser still shows old UI** after a hard reload, open DevTools first (`F12`) and then `Ctrl + Shift + R` — that triggers a more aggressive cache bypass.
+
+**One-shot sanity check before any session:**
+```
+git branch --show-current && git log --oneline -1
+```
+Confirms which branch you're on and what the latest commit is.
+
+---
+
 ## Stage 1 — Ingest a PDF
 
 1. **Name the PDF deliberately before you upload it.** The filename slug becomes the manual filename in DM CM: `Dark Sun MC1.pdf` → `monster_manual_dark-sun-mc1.js`. Rename now if you want it cleaner — there's no rename feature later.
