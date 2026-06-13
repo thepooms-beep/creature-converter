@@ -279,7 +279,12 @@
                   <template x-if="creature.size && !['Tiny','Small','Medium','Large','Huge','Gargantuan'].includes(creature.size)">
                     <option :value="creature.size" x-text="`? (${creature.size}) — re-run conversion`"></option>
                   </template>
-                  <template x-for="s in ['Tiny','Small','Medium','Large','Huge','Gargantuan']"><option x-text="s" :value="s"></option></template>
+                  <option value="Tiny">Tiny</option>
+                  <option value="Small">Small</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Large">Large</option>
+                  <option value="Huge">Huge</option>
+                  <option value="Gargantuan">Gargantuan</option>
                 </select>
               </div>
               <div class="field"><label>Alignment</label><input type="text" x-model="creature.alignment"></div>
@@ -341,7 +346,11 @@
               <div class="row-card">
                 <div class="row-head">
                   <select x-model="sp.type" style="max-width:140px">
-                    <template x-for="t in ['walk','fly','swim','climb','burrow']"><option x-text="t" :value="t"></option></template>
+                    <option value="walk">walk</option>
+                    <option value="fly">fly</option>
+                    <option value="swim">swim</option>
+                    <option value="climb">climb</option>
+                    <option value="burrow">burrow</option>
                   </select>
                   <input type="number" x-model.number="sp.value" style="max-width:100px">
                   <input type="text" x-model="sp.notes" placeholder="optional notes">
