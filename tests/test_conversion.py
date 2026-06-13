@@ -80,3 +80,55 @@ def test_non_string_size_is_noop():
     c = {"size": 5}
     _normalize_size(c)
     assert c["size"] == 5
+
+
+# ---- strip_markdown_asterisks --------------------------------------------
+
+from app.conversion import strip_markdown_asterisks
+
+
+def test_strip_asterisks_from_top_level_string():
+    assert strip_markdown_asterisks("*A gaunt humanoid*") == "A gaunt humanoid"
+
+
+def test_strip_double_asterisks_for_bold():
+    assert strip_markdown_asterisks("**Frightful Presence.**") == "Frightful Presence."
+
+
+def test_strip_mixed_asterisks_inside_string():
+    assert (
+        strip_markdown_asterisks("The *werebat* uses **Multiattack**.")
+        == "The werebat uses Multiattack."
+    )
+
+
+def test_strip_asterisks_recurses_into_dicts_and_lists():
+    nested = {
+        "read_aloud": "*A foot-long lizard*",
+        "traits": [
+            {"name": "**Echolocation**", "text": "It can *see* in the dark."},
+        ],
+        "habitat": ["Forest", "Underdark"],
+    }
+    cleaned = strip_markdown_asterisks(nested)
+    assert cleaned["read_aloud"] == "A foot-long lizard"
+    assert cleaned["traits"][0]["name"] == "Echolocation"
+    assert cleaned["traits"][0]["text"] == "It can see in the dark."
+    assert cleaned["habitat"] == ["Forest", "Underdark"]
+
+
+def test_strip_asterisks_does_not_mutate_input():
+    original = {"x": "*y*"}
+    strip_markdown_asterisks(original)
+    assert original == {"x": "*y*"}
+
+
+def test_strip_asterisks_passes_non_string_scalars_through():
+    assert strip_markdown_asterisks(42) == 42
+    assert strip_markdown_asterisks(None) is None
+    assert strip_markdown_asterisks(True) is True
+
+
+def test_strip_asterisks_handles_empty_string():
+    assert strip_markdown_asterisks("") == ""
+    assert strip_markdown_asterisks("***") == ""

@@ -282,3 +282,23 @@ def test_habitat_passthrough(flat):
 def test_conversion_notes_dropped(flat, werebat):
     assert "conversion_notes" in werebat
     assert "conversion_notes" not in flat
+
+
+# ---- asterisk safety net ------------------------------------------------
+
+def test_flatten_strips_asterisks_from_legacy_nested_json():
+    """Legacy converted JSONs (pre-asterisk-strip) get cleaned on
+    re-approval — the flat record is asterisk-free even if the nested
+    source still has them."""
+    nested = {
+        "name": "Werebat",
+        "abilities": {},
+        "ac": {"value": 10}, "hp": {"average": 1},
+        "read_aloud": "*A gaunt humanoid*",
+        "traits": [{"name": "**Echolocation**", "text": "It *sees* in the dark."}],
+    }
+    out = flatten_creature(nested)
+    assert "*" not in out["read_aloud"]
+    assert "*" not in out["traits"]
+    assert "Echolocation" in out["traits"]
+    assert "sees in the dark" in out["traits"].lower()

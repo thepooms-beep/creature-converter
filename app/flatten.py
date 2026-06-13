@@ -139,6 +139,11 @@ def flatten_creature(
     image_url: if provided, used directly (e.g. existing aidedd.org URL).
     If None, defaults to 'assets/monster_images/<slug>.webp' (relative path
     per the brief for new records)."""
+    # Safety net for legacy converted JSONs that pre-date the
+    # conversion-time asterisk strip — re-approval cleans the exported
+    # record even if the nested JSON in unedited/ still contains *.
+    from . import conversion
+    nested = conversion.strip_markdown_asterisks(nested)
     name = (nested.get("name") or "").strip()
     slug = storage.slugify(name)
 

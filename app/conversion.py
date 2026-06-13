@@ -77,6 +77,26 @@ def _normalize_size(creature: dict[str, Any]) -> None:
         creature["size"] = titled
 
 
+def strip_markdown_asterisks(obj: Any) -> Any:
+    """Recursively remove '*' from every string in a JSON-like structure.
+
+    The conversion model occasionally wraps prose in markdown emphasis
+    (*italic*, **bold**) even though the rendered DM CM stat block has no
+    markdown processor — the asterisks show up as literal characters in
+    read_aloud, trait/action text, etc. D&D stat blocks have no legitimate
+    use for '*', so we strip every occurrence indiscriminately.
+
+    Returns a new structure; the input is not mutated.
+    """
+    if isinstance(obj, str):
+        return obj.replace("*", "")
+    if isinstance(obj, list):
+        return [strip_markdown_asterisks(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: strip_markdown_asterisks(v) for k, v in obj.items()}
+    return obj
+
+
 def _image_block(path: Path) -> dict[str, Any]:
     data = base64.standard_b64encode(_png_bytes(path)).decode("ascii")
     return {
@@ -148,6 +168,7 @@ def convert_creature(
     parsed = json.loads(raw)
     # Defensive: if the model still returns a list (shared stat-block pages),
     # pick the entry whose name matches target_name, else the first one.
+    parsed = strip_markdown_asterisks(parsed)
     if isinstance(parsed, list):
         if target_name:
             match = next(

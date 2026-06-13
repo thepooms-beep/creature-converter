@@ -716,7 +716,7 @@ function app() {
     },
     statusClass(s) {
       if (s === 'converted') return 'info';
-      if (s === 'text-approved' || s === 'image-approved') return 'ok';
+      if (s === 'approved' || s === 'text-approved' || s === 'image-approved') return 'ok';
       return 'warn';
     },
     async refreshSources() {
