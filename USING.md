@@ -72,9 +72,9 @@ The auto-cropped art appears in the left panel. If it's bad:
 When you've approved enough creatures (or all of them), scroll back to the home page.
 
 1. The **Export** card lists every approved creature grouped by source PDF.
-2. Each group shows the filename it'll produce (`monster_manual_<source-slug>.js`) and a roster of badges — green if the webp is ready, amber if it's text-only.
-3. Hit **Build release bundle**.
-4. The status line reports: number of manuals written, files generated, images copied, and any creatures missing concept art.
+2. Each group shows the filename it'll produce (`monster_manual_<source-slug>.js`), a record count, and a roster of badges — green if the webp is ready, amber if it's text-only.
+3. **Per-manual builds (default):** hit **Build this manual** on the row for the source you're working on. Only that source's `.js` file is regenerated; other manuals and their webps are left exactly as they are. Webps for creatures dropped from this manual (and no longer approved anywhere else) get cleaned up.
+4. **Full rebuild (occasional):** the small **Rebuild all manuals** button at the bottom of the card wipes `release/` entirely and regenerates every manual from scratch. Use sparingly — it overwrites any hand-edits you've made to release files. Useful for first-time export or after a major restructuring.
 
 Output lands in `release/`:
 
@@ -86,7 +86,7 @@ release/
     └── <slug>.webp        (one per approved creature with a picked image)
 ```
 
-**Re-export at any time.** The `release/` folder is wiped and rebuilt from scratch, so removed approvals don't leave stale files behind.
+**Per-manual export will still refuse to build** if two approved creatures share an `id` across any sources — DM CM would see the duplicate either way, regardless of which manual published it.
 
 ---
 

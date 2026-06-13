@@ -344,10 +344,22 @@ def export_summary() -> dict:
 
 @app.post("/api/export")
 def export_release() -> dict:
-    """Build release/manually_entered.js + release/assets/monster_images/.
-    Refuses to write if two approved records share an id."""
+    """Rebuild every monster_manual_*.js from scratch. Wipes release/
+    entirely so removed approvals can't leave stale files behind."""
     try:
         return export.export_all()
+    except export.IdCollisionError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/export/{source_slug}")
+def export_release_one(source_slug: str) -> dict:
+    """Build just one manual file. Other manuals and their images are
+    untouched. Still runs the cross-source id-collision check."""
+    try:
+        return export.export_one(source_slug)
     except export.IdCollisionError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:

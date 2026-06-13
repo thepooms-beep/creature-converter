@@ -135,6 +135,9 @@
             <div class="row-head">
               <code x-text="m.file_name"></code>
               <span class="badge info" x-text="`${m.count} record${m.count !== 1 ? 's' : ''}`"></span>
+              <button class="btn btn-primary btn-tiny" @click="buildOneManual(m.source_slug)"
+                      :disabled="exporting"
+                      x-text="exporting && exportingSlug === m.source_slug ? 'Building…' : 'Build this manual'"></button>
             </div>
             <div class="pill-list">
               <template x-for="e in m.entries" :key="e.slug">
@@ -145,10 +148,11 @@
             </div>
           </div>
         </template>
-        <div class="btn-row">
-          <button class="btn btn-primary" @click="runExport()" :disabled="exporting"
-                  x-text="exporting ? 'Bundling…' : 'Build release bundle'"></button>
-          <button class="btn btn-tiny" @click="refreshExportSummary()" :disabled="exporting">Refresh</button>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn btn-tiny" @click="refreshExportSummary()" :disabled="exporting">Refresh roster</button>
+          <button class="btn btn-tiny" @click="runExport()" :disabled="exporting"
+                  x-text="exporting && !exportingSlug ? 'Rebuilding all…' : 'Rebuild all manuals'"
+                  title="Wipes release/ and rebuilds every manual from scratch. Use sparingly — disturbs finished manuals."></button>
         </div>
         <div class="status ok-msg" x-show="exportStatus" x-text="exportStatus"></div>
         <div class="status err" x-text="exportError"></div>
@@ -585,6 +589,7 @@ function app() {
     ingestStatus: '',
     exportSummary: {total_count: 0, manuals: []},
     exporting: false,
+    exportingSlug: '',
     exportStatus: '',
     exportError: '',
     sketchStatus: '',
@@ -655,6 +660,7 @@ function app() {
     },
     async runExport() {
       this.exporting = true;
+      this.exportingSlug = '';
       this.exportStatus = '';
       this.exportError = '';
       try {
@@ -671,6 +677,31 @@ function app() {
         this.exportError = `Export failed: ${e.message}`;
       } finally {
         this.exporting = false;
+      }
+    },
+    async buildOneManual(sourceSlug) {
+      this.exporting = true;
+      this.exportingSlug = sourceSlug;
+      this.exportStatus = '';
+      this.exportError = '';
+      try {
+        const r = await fetch(`/api/export/${encodeURIComponent(sourceSlug)}`, {method:'POST'});
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || r.statusText);
+        if (d.removed_file) {
+          this.exportStatus = `Removed ${d.file_name} — no approvals for this source.`;
+        } else {
+          const missing = d.images_missing.length;
+          const missingNote = missing
+            ? ` (${missing} without concept art: ${d.images_missing.join(', ')})`
+            : '';
+          this.exportStatus = `Wrote ${d.file_name} with ${d.record_count} record${d.record_count !== 1 ? 's' : ''}; ${d.images_copied.length} image${d.images_copied.length !== 1 ? 's' : ''} copied${missingNote}.`;
+        }
+      } catch (e) {
+        this.exportError = `Build failed: ${e.message}`;
+      } finally {
+        this.exporting = false;
+        this.exportingSlug = '';
       }
     },
     settingOptions(key) {

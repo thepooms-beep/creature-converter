@@ -283,6 +283,142 @@ def test_redundant_prefix_dedupe_end_to_end(isolated_root):
     assert not redundant.exists()
 
 
+# ---- export_one: per-manual builds --------------------------------------
+
+def test_export_one_writes_just_this_manual(isolated_root):
+    from app import export
+
+    _approve(isolated_root, "darksun", "b-rohg", {"id": "b-rohg", "name": "B'rohg"})
+    _approve(isolated_root, "ravenloft", "werebat", {"id": "werebat", "name": "Werebat"})
+
+    result = export.export_one("darksun")
+
+    assert result["source_slug"] == "darksun"
+    assert result["record_count"] == 1
+    assert (export.RELEASE_DIR / "monster_manual_darksun.js").exists()
+    # Other manual was never created in the first place.
+    assert not (export.RELEASE_DIR / "monster_manual_ravenloft.js").exists()
+
+
+def test_export_one_doesnt_overwrite_other_existing_manuals(isolated_root):
+    """Pre-existing manual files for unrelated sources stay byte-identical."""
+    from app import export
+
+    _approve(isolated_root, "darksun", "b-rohg", {"id": "b-rohg", "name": "B'rohg"})
+    _approve(isolated_root, "ravenloft", "werebat", {"id": "werebat", "name": "Werebat"})
+    # First full build to create both files on disk.
+    export.export_all()
+    ravenloft_file = export.RELEASE_DIR / "monster_manual_ravenloft.js"
+    original_text = ravenloft_file.read_text(encoding="utf-8")
+    original_mtime = ravenloft_file.stat().st_mtime_ns
+
+    # Re-export only darksun.
+    export.export_one("darksun")
+
+    assert ravenloft_file.read_text(encoding="utf-8") == original_text
+    assert ravenloft_file.stat().st_mtime_ns == original_mtime
+
+
+def test_export_one_wipes_dropped_creatures_webps(isolated_root):
+    """Removing a creature from edited/ and re-exporting that source drops
+    its webp from release/."""
+    from app import export
+
+    _approve(isolated_root, "darksun", "b-rohg", {"id": "b-rohg", "name": "B'rohg"})
+    _approve(isolated_root, "darksun", "thri-kreen", {"id": "thri-kreen", "name": "Thri-kreen"})
+    export.export_one("darksun")
+    assert (export.RELEASE_IMAGES_DIR / "b-rohg.webp").exists()
+    assert (export.RELEASE_IMAGES_DIR / "thri-kreen.webp").exists()
+
+    # Drop thri-kreen from edited/ entirely (json + webp).
+    (isolated_root / "edited" / "darksun" / "thri-kreen.json").unlink()
+    (isolated_root / "edited" / "darksun" / "thri-kreen.webp").unlink()
+    export.export_one("darksun")
+
+    assert (export.RELEASE_IMAGES_DIR / "b-rohg.webp").exists()
+    assert not (export.RELEASE_IMAGES_DIR / "thri-kreen.webp").exists()
+
+
+def test_export_one_preserves_webp_if_creature_still_approved_elsewhere(isolated_root):
+    """If a creature was published in manual A and then re-approved under
+    manual B (with A's approval removed), re-exporting A should NOT wipe
+    the webp — manualB still publishes it."""
+    from app import export
+    import shutil
+
+    # Publish manualA with wraith.
+    _approve(isolated_root, "manualA", "wraith", {"id": "wraith", "name": "Wraith"})
+    export.export_one("manualA")
+    assert (export.RELEASE_IMAGES_DIR / "wraith.webp").exists()
+
+    # Remove wraith from manualA, add it to manualB instead.
+    shutil.rmtree(isolated_root / "edited" / "manualA")
+    _approve(isolated_root, "manualB", "wraith", {"id": "wraith", "name": "Wraith"})
+
+    # Re-export A (now empty). The webp should NOT be wiped — manualB
+    # still has wraith approved.
+    export.export_one("manualA")
+
+    assert (export.RELEASE_IMAGES_DIR / "wraith.webp").exists()
+
+
+def test_export_one_with_no_approvals_removes_existing_file(isolated_root):
+    """Un-approving every creature in a source and re-exporting deletes
+    the file."""
+    from app import export
+
+    _approve(isolated_root, "darksun", "b-rohg", {"id": "b-rohg", "name": "B'rohg"})
+    export.export_one("darksun")
+    target = export.RELEASE_DIR / "monster_manual_darksun.js"
+    assert target.exists()
+
+    # Drop every approval in darksun.
+    import shutil
+    shutil.rmtree(isolated_root / "edited" / "darksun")
+    result = export.export_one("darksun")
+
+    assert result["removed_file"] is True
+    assert result["record_count"] == 0
+    assert not target.exists()
+    assert not (export.RELEASE_IMAGES_DIR / "b-rohg.webp").exists()
+
+
+def test_export_one_with_no_approvals_and_no_existing_file_succeeds(isolated_root):
+    from app import export
+
+    result = export.export_one("never-approved-source")
+    assert result["record_count"] == 0
+    assert result["removed_file"] is False
+
+
+def test_export_one_cross_source_collision_still_raises(isolated_root):
+    """Building one manual still refuses if another manual already has
+    the same id approved — DM CM would see the duplicate either way."""
+    from app import export
+
+    _approve(isolated_root, "sourceA", "goblin", {"id": "goblin", "name": "Goblin"})
+    _approve(isolated_root, "sourceB", "goblin", {"id": "goblin", "name": "Goblin (variant)"})
+
+    with pytest.raises(export.IdCollisionError) as exc_info:
+        export.export_one("sourceA")
+    assert "goblin" in str(exc_info.value)
+
+
+def test_export_one_creates_release_dir_lazily(isolated_root):
+    """If the release/ folder doesn't exist yet (e.g. first per-manual
+    build on a fresh checkout), export_one creates it cleanly."""
+    from app import export
+
+    # Ensure release/ does NOT exist yet.
+    assert not export.RELEASE_DIR.exists()
+
+    _approve(isolated_root, "darksun", "b-rohg", {"id": "b-rohg", "name": "B'rohg"})
+    export.export_one("darksun")
+
+    assert (export.RELEASE_DIR / "monster_manual_darksun.js").exists()
+    assert (export.RELEASE_IMAGES_DIR / "b-rohg.webp").exists()
+
+
 # ---- render_manual_js helper --------------------------------------------
 
 def test_render_manual_js_uses_exact_required_opening_and_closing():

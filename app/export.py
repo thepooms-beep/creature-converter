@@ -24,6 +24,7 @@ minified to match the formatting style of the existing builtin records.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from pathlib import Path
 from typing import Any
@@ -165,4 +166,80 @@ def export_all() -> dict[str, Any]:
         "total_records": sum(m["record_count"] for m in manuals),
         "images_copied": images_copied,
         "images_missing": images_missing,
+    }
+
+
+def _slugs_published_in(target_file: Path) -> set[str]:
+    """Parse a manual file on disk and return the set of ids it contains.
+    Used to find webps to wipe when re-exporting just one manual."""
+    if not target_file.exists():
+        return set()
+    return set(re.findall(r'"id":"([^"]+)"', target_file.read_text(encoding="utf-8")))
+
+
+def export_one(source_slug: str) -> dict[str, Any]:
+    """Build (or rebuild) just the manual file for one source, leaving every
+    other manual untouched. Webps for creatures that used to be in this
+    manual but no longer appear in any source's approvals are wiped from
+    release/assets/monster_images/; webps for creatures still approved
+    elsewhere are kept.
+
+    Still runs the cross-source id-collision check — duplicate ids in
+    DM CM would clash regardless of which manual published which.
+    """
+    all_records = collect_records()
+    _detect_collisions(all_records)
+
+    file_name = manual_file_name(source_slug)
+    target_file = RELEASE_DIR / file_name
+    RELEASE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+
+    previously_published = _slugs_published_in(target_file)
+    all_current_slugs = {rec["id"] for _, _, rec in all_records}
+    # Wipe webps that are no longer in ANY source's approvals.
+    for slug in previously_published - all_current_slugs:
+        webp = RELEASE_IMAGES_DIR / f"{slug}.webp"
+        if webp.exists():
+            webp.unlink()
+
+    entries = [(p, r) for s, p, r in all_records if s == source_slug]
+
+    if not entries:
+        removed = target_file.exists()
+        if removed:
+            target_file.unlink()
+        return {
+            "ok": True,
+            "source_slug": source_slug,
+            "file_name": file_name,
+            "record_count": 0,
+            "slugs": [],
+            "images_copied": [],
+            "images_missing": [],
+            "removed_file": removed,
+        }
+
+    flat_records = [rec for _, rec in entries]
+    target_file.write_text(render_manual_js(flat_records), encoding="utf-8")
+
+    images_copied: list[str] = []
+    images_missing: list[str] = []
+    for path, rec in entries:
+        slug = rec["id"]
+        src_webp = path.with_suffix(".webp")
+        if src_webp.exists():
+            shutil.copy2(src_webp, RELEASE_IMAGES_DIR / f"{slug}.webp")
+            images_copied.append(slug)
+        else:
+            images_missing.append(slug)
+
+    return {
+        "ok": True,
+        "source_slug": source_slug,
+        "file_name": file_name,
+        "record_count": len(flat_records),
+        "slugs": [rec["id"] for rec in flat_records],
+        "images_copied": images_copied,
+        "images_missing": images_missing,
+        "removed_file": False,
     }
